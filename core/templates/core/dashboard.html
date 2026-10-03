@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ shop_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: white;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-left: 5px solid var(--primary-green);
+    }
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .metric-card.accent-pink {
+        border-left-color: var(--secondary-pink);
+    }
+    .metric-card.accent-warning {
+        border-left-color: #ff9800;
+    }
+    .metric-card.accent-blue {
+        border-left-color: #2196f3;
+    }
+    .metric-card.accent-purple {
+        border-left-color: #9c27b0;
+    }
+    .metric-card .metric-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a202c;
+    }
+    .metric-card .metric-label {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .quick-action-btn {
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-chart-line text-success me-2"></i> {{ shop_name }} Dashboard
+        </h3>
+        <p class="text-muted mb-0">
+            <i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ shop_address }} &bull; 
+            <span class="badge bg-success-subtle text-success border border-success ms-1">{{ today_date|date:"D, M d, Y" }}</span>
+        </p>
+    </div>
+
+    <div>
+        <a href="{% url 'pos_billing' %}" class="btn btn-pink btn-lg fw-bold shadow-sm px-4">
+            <i class="fa-solid fa-bolt me-2"></i> Open POS Billing / નવું બિલ
+        </a>
+    </div>
+</div>
+
+<!-- 8 Metric Cards Grid -->
+<div class="row g-3 mb-4">
+    <!-- Today's Sales -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Today's Sales</span>
+                <i class="fa-solid fa-indian-rupee-sign text-success fa-lg"></i>
+            </div>
+            <div class="metric-value text-success mt-2">₹{{ today_sales|floatformat:2 }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-receipt me-1"></i> {{ today_bills }} Bills today</div>
+        </div>
+    </div>
+
+    <!-- Today's Bills Count -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-blue p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Today's Bills</span>
+                <i class="fa-solid fa-receipt text-primary fa-lg"></i>
+            </div>
+            <div class="metric-value text-primary mt-2">{{ today_bills }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-clock me-1"></i> Live transactions</div>
+        </div>
+    </div>
+
+    <!-- Today's Profit (ADMIN ONLY) -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-pink p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Today's Profit</span>
+                <i class="fa-solid fa-chart-pie text-pink fa-lg" style="color: var(--secondary-pink);"></i>
+            </div>
+            <div class="metric-value text-pink mt-2" style="color: var(--secondary-pink);">₹{{ today_profit|floatformat:2 }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-shield-halved me-1"></i> Admin confidential</div>
+        </div>
+    </div>
+
+    <!-- Total Products -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-purple p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Total Products</span>
+                <i class="fa-solid fa-boxes-stacked text-purple fa-lg" style="color: #9c27b0;"></i>
+            </div>
+            <div class="metric-value mt-2" style="color: #9c27b0;">{{ total_products }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-list me-1"></i> Active inventory items</div>
+        </div>
+    </div>
+
+    <!-- Low Stock Products -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-warning p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Low Stock Alert</span>
+                <i class="fa-solid fa-triangle-exclamation text-warning fa-lg"></i>
+            </div>
+            <div class="metric-value text-warning mt-2">{{ low_stock_count }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-bell me-1"></i> Requires reorder</div>
+        </div>
+    </div>
+
+    <!-- Pending Customer Payments -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-warning p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Pending Payments</span>
+                <i class="fa-solid fa-hand-holding-dollar text-danger fa-lg"></i>
+            </div>
+            <div class="metric-value text-danger mt-2">₹{{ pending_payments|floatformat:2 }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-user-clock me-1"></i> Customer receivables</div>
+        </div>
+    </div>
+
+    <!-- Today's Expenses (ADMIN ONLY) -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-pink p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Today's Expenses</span>
+                <i class="fa-solid fa-file-invoice-dollar text-danger fa-lg"></i>
+            </div>
+            <div class="metric-value text-danger mt-2">₹{{ today_expenses|floatformat:2 }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-coins me-1"></i> Operational costs</div>
+        </div>
+    </div>
+
+    <!-- Online Orders Pending -->
+    <div class="col-6 col-md-3">
+        <div class="card metric-card accent-blue p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Online Orders</span>
+                <i class="fa-solid fa-truck-fast text-info fa-lg"></i>
+            </div>
+            <div class="metric-value text-info mt-2">{{ pending_online_orders }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-box me-1"></i> Pending dispatch</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Shortcuts -->
+<div class="card card-custom p-4 mb-4">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-bolt text-warning me-2"></i> Quick Actions / સિસ્ટમ એક્સેસ</h5>
+    <div class="row g-3">
+        <div class="col-6 col-md-2">
+            <a href="{% url 'pos_billing' %}" class="btn btn-green w-100 quick-action-btn">
+                <i class="fa-solid fa-cash-register"></i> POS Bill
+            </a>
+        </div>
+        <div class="col-6 col-md-2">
+            <a href="#" class="btn btn-outline-success w-100 quick-action-btn">
+                <i class="fa-solid fa-box"></i> Products
+            </a>
+        </div>
+        <div class="col-6 col-md-2">
+            <a href="#" class="btn btn-outline-primary w-100 quick-action-btn">
+                <i class="fa-solid fa-warehouse"></i> Inventory
+            </a>
+        </div>
+        <div class="col-6 col-md-2">
+            <a href="#" class="btn btn-outline-info w-100 quick-action-btn">
+                <i class="fa-solid fa-users"></i> Customers
+            </a>
+        </div>
+        <div class="col-6 col-md-2">
+            <a href="#" class="btn btn-outline-warning w-100 quick-action-btn">
+                <i class="fa-solid fa-truck-ramp-box"></i> Purchases
+            </a>
+        </div>
+        <div class="col-6 col-md-2">
+            <a href="#" class="btn btn-pink w-100 quick-action-btn">
+                <i class="fa-solid fa-chart-column"></i> Reports
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Charts & Activity Tables -->
+<div class="row g-4 mb-4">
+    <!-- Chart: Sales Trend -->
+    <div class="col-md-8">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-chart-area text-success me-2"></i> Weekly Sales Overview</h5>
+                <span class="badge bg-light text-dark">7 Days Trend</span>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="salesTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart: Payment Method Breakdown -->
+    <div class="col-md-4">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-pie-chart text-pink me-2"></i> Payment Methods</h5>
+            <div style="height: 250px;" class="d-flex align-items-center justify-content-center">
+                <canvas id="paymentMethodChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables: Recent Sales & Low Stock -->
+<div class="row g-4">
+    <!-- Recent Sales -->
+    <div class="col-md-7">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-success"><i class="fa-solid fa-clock-rotate-left me-2"></i> Recent Sales</h5>
+                <span class="badge bg-success-subtle text-success">Live Updates</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Invoice #</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td class="ps-3 fw-bold text-success">{{ sale.invoice_number }}</td>
+                                <td>{{ sale.customer.name|default:"Walking Customer" }}</td>
+                                <td class="fw-bold">₹{{ sale.grand_total }}</td>
+                                <td><span class="badge bg-info-subtle text-info border border-info">{{ sale.get_payment_method_display }}</span></td>
+                                <td class="text-muted small">{{ sale.created_at|date:"h:i A" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-receipt fa-2x mb-2 d-block text-black-50"></i>
+                                    No sales recorded today yet. Use POS Billing to create bills.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alerts -->
+    <div class="col-md-5">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-triangle-exclamation me-2"></i> Low Stock Alert</h5>
+                <span class="badge bg-warning text-dark">Action Needed</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Product Name</th>
+                                <th>Stock</th>
+                                <th>Min Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in low_stock_products %}
+                            <tr>
+                                <td class="ps-3 fw-bold">{{ p.name }} <small class="text-muted">({{ p.gujarati_name }})</small></td>
+                                <td><span class="badge bg-danger px-2 py-1">{{ p.current_stock }} {{ p.unit }}</span></td>
+                                <td><span class="badge bg-secondary px-2 py-1">{{ p.minimum_stock }} {{ p.unit }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-circle-check fa-2x mb-2 d-block text-success opacity-50"></i>
+                                    All inventory levels are healthy!
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Sales Trend Chart
+        const ctxTrend = document.getElementById('salesTrendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Sales Amount (₹)',
+                    data: [12000, 19000, 15000, 25000, 22000, 30000, {{ today_sales }}],
+                    borderColor: '#16823b',
+                    backgroundColor: 'rgba(22, 130, 59, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Payment Method Chart
+        const ctxPayment = document.getElementById('paymentMethodChart').getContext('2d');
+        new Chart(ctxPayment, {
+            type: 'doughnut',
+            data: {
+                labels: ['Cash', 'UPI', 'Card', 'Mixed'],
+                datasets: [{
+                    data: [50, 35, 10, 5],
+                    backgroundColor: ['#16823b', '#e91e63', '#2196f3', '#ff9800'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Label {{ order_id }} - {{ shop_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #0f172a;
+        }
+        .label-card {
+            width: 100mm;
+            min-height: 150mm;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            border: 2px solid #000000;
+            border-radius: 6px;
+            position: relative;
+        }
+        .sender-box {
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .recipient-box {
+            border: 2px solid #000;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fafafa;
+            margin-bottom: 12px;
+        }
+        .ship-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 6px;
+        }
+        .recipient-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #000;
+        }
+        .recipient-address {
+            font-size: 0.95rem;
+            line-height: 1.35;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+        .pincode-badge {
+            font-size: 1.2rem;
+            font-weight: 900;
+            background: #000;
+            color: #fff;
+            padding: 2px 8px;
+            display: inline-block;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+        .dispatch-meta {
+            border-top: 2px dashed #000;
+            padding-top: 8px;
+            font-size: 0.82rem;
+        }
+        .action-bar {
+            max-width: 100mm;
+            margin: 15px auto 0 auto;
+        }
+        @media print {
+            @page {
+                size: 100mm 150mm;
+                margin: 0;
+            }
+            body {
+                background: #ffffff !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .label-card {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border: 2px solid #000 !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+                min-height: 100vh !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-bar no-print d-flex justify-content-between align-items-center">
+    <button onclick="window.history.back()" class="btn btn-secondary btn-sm fw-bold">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back
+    </button>
+    <button onclick="window.print()" class="btn btn-success btn-sm fw-bold">
+        <i class="fa-solid fa-print me-1"></i> Print Label (CTRL+P)
+    </button>
+</div>
+
+<div class="label-card">
+    <!-- SENDER INFORMATION -->
+    <div class="sender-box">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <strong class="text-success fs-6">{{ shop_name }}</strong><br>
+                <small class="text-muted d-block">{{ shop_address }}</small>
+                <small class="text-muted">Ph: {{ shop_phone }}</small>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-dark">COURIER DISPATCH</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECIPIENT INFORMATION (SHIP TO) -->
+    <div class="recipient-box">
+        <div class="ship-title"><i class="fa-solid fa-truck-ramp-box me-1"></i> SHIP TO / પ્રતિ:</div>
+        <div class="recipient-name">{{ customer_name }}</div>
+        <div class="fw-bold my-1"><i class="fa-solid fa-phone me-1"></i> Mobile: {{ mobile }}</div>
+        {% if whatsapp %}<div class="small text-muted mb-1"><i class="fa-brands fa-whatsapp me-1"></i> WhatsApp: {{ whatsapp }}</div>{% endif %}
+        
+        <div class="recipient-address mt-2">
+            <strong>Address:</strong><br>
+            {{ full_address }}
+        </div>
+        
+        <div class="mt-2 pt-1 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
+            <div>
+                <strong>City:</strong> {{ city }} ({% if state %}{{ state }}{% else %}Gujarat{% endif %})
+            </div>
+            <div class="pincode-badge">
+                PIN: {{ pincode }}
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDER & COURIER LOGISTICS -->
+    <div class="dispatch-meta">
+        <div class="row g-1 mb-2">
+            <div class="col-6">
+                <strong>Order ID:</strong> <code>{{ order_id }}</code>
+            </div>
+            <div class="col-6 text-end">
+                <strong>Date:</strong> {{ order_date|date:"d/m/Y" }}
+            </div>
+            <div class="col-6">
+                <strong>Courier:</strong> {{ courier_name }}
+            </div>
+            <div class="col-6 text-end">
+                <strong>AWB / Tracking:</strong> <code>{{ tracking_number }}</code>
+            </div>
+        </div>
+
+        {% if safe_items %}
+        <div class="border-top pt-2">
+            <strong class="d-block mb-1">Package Content:</strong>
+            <ul class="mb-0 ps-3 small text-muted">
+                {% for item in safe_items %}
+                    <li>{{ item.quantity }} × {{ item.product_name }} {% if item.gujarati_name %}({{ item.gujarati_name }}){% endif %}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="mt-3 text-center border-top pt-2">
+            <span class="fw-bold text-uppercase fs-8 border border-dark px-2 py-1">HANDLE WITH CARE / કાળજીપૂર્વક હેન્ડલ કરો</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Return {{ sales_return.return_id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0"><i class="fa-solid fa-rotate-left text-warning me-2"></i>Return Detail: {{ sales_return.return_id }}</h4>
+                <a href="{% url 'returns:list' %}" class="btn btn-sm btn-light"><i class="fa-solid fa-arrow-left me-1"></i> Back to Returns</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <span class="text-muted d-block small">Return ID</span>
+                        <span class="fs-5 fw-bold text-dark">{{ sales_return.return_id }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block small">Original Sale ID</span>
+                        <span class="badge bg-light text-dark border fs-6">{{ sales_return.sale.sale_id }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block small">Return Date</span>
+                        <span class="fw-semibold text-dark">{{ sales_return.return_date|date:"d M Y H:i" }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block small">Customer</span>
+                        <span class="fw-semibold text-dark">{{ sales_return.customer.name|default:"Walk-in Customer" }}</span>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded mb-4">
+                    <span class="text-muted d-block small mb-1">Return Reason</span>
+                    <span class="fw-semibold text-dark">{{ sales_return.reason }}</span>
+                </div>
+
+                <h5 class="fw-bold mb-3">Returned Items</h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Returned Qty</th>
+                                <th>Refund Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in sales_return.items.all %}
+                            <tr>
+                                <td class="fw-semibold">{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td class="fw-bold text-danger">₹{{ item.refund_amount }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 bg-light rounded mb-4 d-flex justify-content-between align-items-center">
+                    <span class="fs-5 fw-semibold text-dark">Total Refunded Amount:</span>
+                    <span class="fs-3 fw-bold text-danger">₹{{ sales_return.refund_amount }}</span>
+                </div>
+
+                {% if sales_return.notes %}
+                <div class="mb-4">
+                    <span class="text-muted d-block small mb-1">Internal Notes</span>
+                    <p class="text-dark bg-white p-2 border rounded mb-0">{{ sales_return.notes }}</p>
+                </div>
+                {% endif %}
+
+                <div class="text-muted small border-top pt-3 d-flex justify-content-between">
+                    <span>Processed by: {{ sales_return.created_by.get_full_name|default:sales_return.created_by.username }}</span>
+                    <span>Processed at: {{ sales_return.created_at|date:"d M Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

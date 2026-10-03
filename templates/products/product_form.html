@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-box-open me-2"></i> {{ title }}</h4>
+                {% if product %}
+                    <span class="badge bg-success fs-6">ID: {{ product.product_id }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- SECTION 1: BASIC INFORMATION -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-info-circle me-2"></i> Basic Product Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Product Name (English) <span class="text-danger">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Gujarati Name / ગુજરાતી નામ</label>
+                                {{ form.gujarati_name }}
+                                {% if form.gujarati_name.errors %}<div class="text-danger small mt-1">{{ form.gujarati_name.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                {{ form.category }}
+                                {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Brand</label>
+                                {{ form.brand }}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">SKU Code</label>
+                                {{ form.sku }}
+                                {% if form.sku.errors %}<div class="text-danger small mt-1">{{ form.sku.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Barcode</label>
+                                {{ form.barcode }}
+                                {% if form.barcode.errors %}<div class="text-danger small mt-1">{{ form.barcode.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: PRICING & TAXATION -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-indian-rupee-sign me-2"></i> Pricing & Taxes (Admin Only)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-danger">Purchase Price (₹) <span class="text-danger">*</span></label>
+                                {{ form.purchase_price }}
+                                <div class="form-text text-danger fs-8"><i class="fa-solid fa-lock me-1"></i> Strictly Private to Admin</div>
+                                {% if form.purchase_price.errors %}<div class="text-danger small mt-1">{{ form.purchase_price.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-success">Selling Price (₹) <span class="text-danger">*</span></label>
+                                {{ form.selling_price }}
+                                {% if form.selling_price.errors %}<div class="text-danger small mt-1">{{ form.selling_price.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">MRP (₹)</label>
+                                {{ form.mrp }}
+                                {% if form.mrp.errors %}<div class="text-danger small mt-1">{{ form.mrp.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">GST Rate (%)</label>
+                                {{ form.gst_rate }}
+                                {% if form.gst_rate.errors %}<div class="text-danger small mt-1">{{ form.gst_rate.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: STOCK & UNITS -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-warehouse me-2"></i> Inventory & Stock Thresholds</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Opening Stock</label>
+                                {{ form.opening_stock }}
+                                {% if form.opening_stock.errors %}<div class="text-danger small mt-1">{{ form.opening_stock.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Current Stock</label>
+                                {{ form.current_stock }}
+                                {% if form.current_stock.errors %}<div class="text-danger small mt-1">{{ form.current_stock.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Minimum Low Stock Alert</label>
+                                {{ form.minimum_stock }}
+                                {% if form.minimum_stock.errors %}<div class="text-danger small mt-1">{{ form.minimum_stock.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Unit Type</label>
+                                {{ form.unit }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: MEDIA & DETAILS -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-image me-2"></i> Product Image & Description</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Product Image Upload</label>
+                                {{ form.image }}
+                                {% if product and product.image %}
+                                    <div class="mt-2 d-flex align-items-center gap-2">
+                                        <img src="{{ product.image.url }}" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <span class="text-muted small">Current Image</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Description / નોંધ</label>
+                                {{ form.description }}
+                            </div>
+
+                            <div class="col-12 form-check ms-2">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-bold" for="id_is_active">
+                                    Active Status (Show in POS & active inventory)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT BUTTONS -->
+                    <div class="d-flex justify-content-between pt-2">
+                        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-green px-5 fw-bold btn-lg shadow-sm">
+                            <i class="fa-solid fa-check me-1"></i> Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

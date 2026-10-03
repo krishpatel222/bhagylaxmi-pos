@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Online Orders Directory - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-truck-fast text-success me-2"></i> Online Order Management</h3>
+        <p class="text-muted mb-0">Track customer orders, packing queue, courier dispatch, and shipping labels</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'online_orders:dispatch' %}" class="btn btn-outline-primary fw-bold">
+            <i class="fa-solid fa-boxes-packing me-1"></i> Dispatch Queue
+        </a>
+        <a href="{% url 'online_orders:add' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> Create Online Order
+        </a>
+    </div>
+</div>
+
+<!-- Multi-criteria Search & Filters -->
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Search Query</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Order ORD-000001, Name, Mobile, PIN, AWB...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Order Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="NEW" {% if status_filter == 'NEW' %}selected{% endif %}>New</option>
+                    <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                    <option value="PACKED" {% if status_filter == 'PACKED' %}selected{% endif %}>Packed</option>
+                    <option value="DISPATCHED" {% if status_filter == 'DISPATCHED' %}selected{% endif %}>Dispatched</option>
+                    <option value="DELIVERED" {% if status_filter == 'DELIVERED' %}selected{% endif %}>Delivered</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Payment Status</label>
+                <select name="payment_status" class="form-select form-select-sm">
+                    <option value="">All Payments</option>
+                    <option value="PAID" {% if payment_filter == 'PAID' %}selected{% endif %}>Paid</option>
+                    <option value="PARTIAL" {% if payment_filter == 'PARTIAL' %}selected{% endif %}>Partial</option>
+                    <option value="COD" {% if payment_filter == 'COD' %}selected{% endif %}>COD</option>
+                    <option value="PENDING" {% if payment_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">From Date</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">To Date</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-1 d-flex align-items-end gap-1">
+                <button type="submit" class="btn btn-green btn-sm w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i></button>
+                {% if query or status_filter or payment_filter or date_from or date_to %}
+                    <a href="{% url 'online_orders:list' %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Order Table -->
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Order ID</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Location</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Courier / AWB</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-success"><code>{{ o.order_id }}</code></td>
+                        <td class="small">{{ o.order_date|date:"d/m/Y h:i A" }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ o.customer_name }}</div>
+                            <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i>{{ o.mobile }}</div>
+                        </td>
+                        <td class="small">
+                            {{ o.city }}<br>
+                            <span class="badge bg-light text-dark border">PIN: {{ o.pincode }}</span>
+                        </td>
+                        <td class="fw-bold text-dark">₹{{ o.order_amount }}</td>
+                        <td>
+                            {% if o.payment_status == 'PAID' %}
+                                <span class="badge bg-success">PAID</span>
+                            {% elif o.payment_status == 'PARTIAL' %}
+                                <span class="badge bg-warning text-dark">PARTIAL</span>
+                            {% elif o.payment_status == 'COD' %}
+                                <span class="badge bg-primary">COD</span>
+                            {% else %}
+                                <span class="badge bg-danger">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if o.status == 'NEW' %}
+                                <span class="badge bg-info">New</span>
+                            {% elif o.status == 'CONFIRMED' %}
+                                <span class="badge bg-primary">Confirmed</span>
+                            {% elif o.status == 'PACKED' %}
+                                <span class="badge bg-warning text-dark">Packed</span>
+                            {% elif o.status == 'DISPATCHED' %}
+                                <span class="badge bg-success">Dispatched</span>
+                            {% elif o.status == 'DELIVERED' %}
+                                <span class="badge bg-dark">Delivered</span>
+                            {% elif o.status == 'CANCELLED' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ o.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if o.courier_name %}
+                                <div class="fw-bold">{{ o.courier_name }}</div>
+                                {% if o.tracking_number %}<code>{{ o.tracking_number }}</code>{% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'online_orders:detail' o.pk %}" class="btn btn-sm btn-outline-info" title="View Order">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <a href="{% url 'online_orders:shipping_label' o.pk %}" class="btn btn-sm btn-outline-success" target="_blank" title="Print Shipping Label">
+                                    <i class="fa-solid fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-truck-fast fa-3x mb-3 text-black-50 d-block"></i>
+                            <h5>No online orders found</h5>
+                            <p class="mb-3">Manually enter online orders to manage shipping & dispatch.</p>
+                            <a href="{% url 'online_orders:add' %}" class="btn btn-green fw-bold">
+                                <i class="fa-solid fa-plus me-1"></i> Create First Online Order
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} orders</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&payment_status={{ payment_filter }}&courier={{ courier_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&payment_status={{ payment_filter }}&courier={{ courier_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

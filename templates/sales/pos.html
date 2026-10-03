@@ -1,0 +1,589 @@
+{% extends 'base.html' %}
+
+{% block title %}POS Billing Terminal - {{ shop_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pos-container {
+        height: calc(100vh - 100px);
+    }
+    .product-scroll-area {
+        height: calc(100vh - 240px);
+        overflow-y: auto;
+    }
+    .cart-scroll-area {
+        height: calc(100vh - 430px);
+        min-height: 250px;
+        overflow-y: auto;
+    }
+    .product-card {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        border: 1px solid #e2e8f0;
+    }
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: var(--primary-green);
+    }
+    .product-card.out-of-stock {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #f8fafc;
+    }
+    .grand-total-display {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--primary-green);
+        line-height: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 pos-container">
+    <!-- LEFT PANEL: PRODUCT SEARCH & GRID -->
+    <div class="col-lg-7 d-flex flex-column">
+        <!-- Search & Category Bar -->
+        <div class="card card-custom mb-3 p-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white border-end-0 text-success"><i class="fa-solid fa-barcode"></i></span>
+                        <input type="text" id="posProductSearch" class="form-control border-start-0 ps-0" placeholder="Search Product Name, Gujarati Name, SKU, Barcode (F2)..." autofocus autocomplete="off">
+                        <button class="btn btn-green fw-bold px-3" type="button" id="btnSearchSubmit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="categoryFilter" class="form-select form-select-lg">
+                        <option value="">All Categories / બધી કેટેગરી</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div class="card card-custom flex-grow-1 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-boxes-stacked text-success me-2"></i> Select Products / પ્રોડક્ટ પસંદ કરો</h6>
+                <span id="productResultCount" class="badge bg-light text-dark border">0 items</span>
+            </div>
+            <div id="productGrid" class="row g-2 product-scroll-area pe-1">
+                <div class="col-12 text-center py-5 text-muted">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x text-success mb-2"></i>
+                    <p>Loading catalog...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: CART & CHECKOUT -->
+    <div class="col-lg-5 d-flex flex-column">
+        <div class="card card-custom flex-grow-1 p-3 d-flex flex-column">
+            <!-- Customer Bar -->
+            <div class="p-2 bg-light rounded-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <i class="fa-solid fa-user-tag text-primary fs-5"></i>
+                    <div class="flex-grow-1">
+                        <select id="posCustomerSelect" class="form-select form-select-sm">
+                            <option value="">Walk-in Customer / સામાન્ય ગ્રાહક</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-success fw-bold" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                    <i class="fa-solid fa-user-plus me-1"></i> Add New
+                </button>
+            </div>
+
+            <!-- Cart Table -->
+            <div class="cart-scroll-area mb-3 border rounded-3 p-0">
+                <table class="table table-hover align-middle mb-0" id="cartTable">
+                    <thead class="table-light sticky-top">
+                        <tr class="small">
+                            <th class="ps-3">Item</th>
+                            <th style="width: 110px;">Qty</th>
+                            <th style="width: 90px;">Rate</th>
+                            <th style="width: 100px;" class="text-end pe-3">Total</th>
+                            <th style="width: 35px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartTableBody">
+                        <tr id="emptyCartRow">
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-cart-shopping fa-3x mb-3 text-black-50 d-block"></i>
+                                <h6>Cart is empty</h6>
+                                <small>Click or search products to add items to bill.</small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Cart Totals Summary -->
+            <div class="p-3 bg-light rounded-3 mb-3">
+                <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <span>Subtotal:</span>
+                    <strong id="summarySubtotal" class="text-dark">₹0.00</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1 small text-muted">
+                    <span>GST Tax Total:</span>
+                    <strong id="summaryGST" class="text-dark">₹0.00</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2 small text-muted align-items-center">
+                    <span>Bill Discount (₹):</span>
+                    <input type="number" id="billDiscountInput" class="form-control form-control-sm text-end fw-bold" style="width: 100px;" value="0" min="0" step="0.01">
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small fw-bold d-block">GRAND TOTAL</span>
+                        <small class="text-success" id="cartItemCount">0 Items</small>
+                    </div>
+                    <div class="grand-total-display" id="summaryGrandTotal">₹0.00</div>
+                </div>
+            </div>
+
+            <!-- Payment Method & Checkout Button -->
+            <div class="mt-auto">
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_cash" value="CASH" checked>
+                        <label class="btn btn-outline-success w-100 fw-bold py-2" for="pm_cash"><i class="fa-solid fa-money-bill-wave me-1"></i> Cash</label>
+                    </div>
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_upi" value="UPI">
+                        <label class="btn btn-outline-primary w-100 fw-bold py-2" for="pm_upi"><i class="fa-solid fa-qrcode me-1"></i> UPI</label>
+                    </div>
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_card" value="CARD">
+                        <label class="btn btn-outline-info w-100 fw-bold py-2" for="pm_card"><i class="fa-solid fa-credit-card me-1"></i> Card</label>
+                    </div>
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_credit" value="CREDIT">
+                        <label class="btn btn-outline-danger w-100 fw-bold py-2" for="pm_credit"><i class="fa-solid fa-hand-holding-dollar me-1"></i> Credit</label>
+                    </div>
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_bank" value="BANK_TRANSFER">
+                        <label class="btn btn-outline-warning w-100 fw-bold py-2" for="pm_bank"><i class="fa-solid fa-building-columns me-1"></i> Bank</label>
+                    </div>
+                    <div class="col-4">
+                        <input type="radio" class="btn-check" name="payment_method" id="pm_mixed" value="MIXED">
+                        <label class="btn btn-outline-dark w-100 fw-bold py-2" for="pm_mixed"><i class="fa-solid fa-layer-group me-1"></i> Mixed</label>
+                    </div>
+                </div>
+
+                <!-- Mixed Payment Inputs Collapsible -->
+                <div id="mixedPaymentBox" class="p-2 border rounded-3 mb-3 bg-white d-none">
+                    <h7 class="fw-bold small text-dark mb-2 d-block">Mixed Payment Breakdown / વિવિધ ચૂકવણી:</h7>
+                    <div class="row g-2 small">
+                        <div class="col-4"><label>Cash ₹</label><input type="number" id="mix_cash" class="form-control form-control-sm mix-calc" value="0"></div>
+                        <div class="col-4"><label>UPI ₹</label><input type="number" id="mix_upi" class="form-control form-control-sm mix-calc" value="0"></div>
+                        <div class="col-4"><label>Card ₹</label><input type="number" id="mix_card" class="form-control form-control-sm mix-calc" value="0"></div>
+                        <div class="col-6"><label>Bank ₹</label><input type="number" id="mix_bank" class="form-control form-control-sm mix-calc" value="0"></div>
+                        <div class="col-6"><label>Credit (Pending) ₹</label><input type="number" id="mix_credit" class="form-control form-control-sm mix-calc" value="0"></div>
+                    </div>
+                </div>
+
+                <!-- Cash Tendered Change Helper -->
+                <div id="cashCalcBox" class="row g-2 mb-3">
+                    <div class="col-6">
+                        <input type="number" id="cashTenderedInput" class="form-control" placeholder="Received Cash ₹">
+                    </div>
+                    <div class="col-6 d-flex align-items-center">
+                        <span class="fw-bold text-dark me-1">Change:</span>
+                        <span id="cashChangeDisplay" class="fw-bold fs-5 text-danger">₹0.00</span>
+                    </div>
+                </div>
+
+                <button id="btnCheckout" class="btn btn-green w-100 btn-lg fw-bold py-3 shadow-sm fs-4">
+                    <i class="fa-solid fa-check-circle me-2"></i> COMPLETE CHECKOUT / બિલ પૂરૂં કરો
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QUICK ADD CUSTOMER MODAL -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i> Quick Add Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="posQuickCustomerForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Customer Name <span class="text-danger">*</span></label>
+                        <input type="text" id="quickCustName" class="form-control" required placeholder="Full Name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mobile Number <span class="text-danger">*</span></label>
+                        <input type="text" id="quickCustMobile" class="form-control" required placeholder="10-digit mobile number">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">City</label>
+                        <input type="text" id="quickCustCity" class="form-control" placeholder="Visnagar">
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-green fw-bold"><i class="fa-solid fa-check me-1"></i> Save & Select</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById("posProductSearch");
+        const categoryFilter = document.getElementById("categoryFilter");
+        const productGrid = document.getElementById("productGrid");
+        const cartTableBody = document.getElementById("cartTableBody");
+        const emptyCartRow = document.getElementById("emptyCartRow");
+        const summarySubtotal = document.getElementById("summarySubtotal");
+        const summaryGST = document.getElementById("summaryGST");
+        const summaryGrandTotal = document.getElementById("summaryGrandTotal");
+        const billDiscountInput = document.getElementById("billDiscountInput");
+        const cartItemCount = document.getElementById("cartItemCount");
+        const btnCheckout = document.getElementById("btnCheckout");
+        const posCustomerSelect = document.getElementById("posCustomerSelect");
+        const mixedPaymentBox = document.getElementById("mixedPaymentBox");
+        const cashCalcBox = document.getElementById("cashCalcBox");
+
+        let cart = [];
+        let catalog = [];
+
+        // Load Initial Catalog & Customers
+        fetchProducts();
+        fetchCustomers();
+
+        // Search Handlers
+        searchInput.addEventListener("input", debounce(fetchProducts, 200));
+        categoryFilter.addEventListener("change", fetchProducts);
+
+        // F2 Shortcut for Search focus
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "F2") {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        // Payment Method Toggle
+        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+            radio.addEventListener("change", function() {
+                if (this.value === "MIXED") {
+                    mixedPaymentBox.classList.remove("d-none");
+                    cashCalcBox.classList.add("d-none");
+                } else {
+                    mixedPaymentBox.classList.add("d-none");
+                    if (this.value === "CASH") {
+                        cashCalcBox.classList.remove("d-none");
+                    } else {
+                        cashCalcBox.classList.add("d-none");
+                    }
+                }
+            });
+        });
+
+        // Cash Tendered Helper
+        document.getElementById("cashTenderedInput").addEventListener("input", function() {
+            const tendered = parseFloat(this.value) || 0;
+            const grandTotal = calculateTotals().grandTotal;
+            const change = tendered - grandTotal;
+            const display = document.getElementById("cashChangeDisplay");
+            display.textContent = "₹" + (change > 0 ? change.toFixed(2) : "0.00");
+        });
+
+        // Bill Discount Listener
+        billDiscountInput.addEventListener("input", renderCart);
+
+        function fetchProducts() {
+            const q = searchInput.value.trim();
+            const cat = categoryFilter.value;
+            const url = `{% url 'sales:product_search_json' %}?q=${encodeURIComponent(q)}&category=${encodeURIComponent(cat)}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    catalog = data.products || [];
+                    renderProductGrid(catalog);
+                })
+                .catch(err => console.error("Error fetching products:", err));
+        }
+
+        function fetchCustomers() {
+            fetch("{% url 'customers:search_json' %}?q=")
+                .then(res => res.json())
+                .then(data => {
+                    const custs = data.customers || [];
+                    posCustomerSelect.innerHTML = '<option value="">Walk-in Customer / સામાન્ય ગ્રાહક</option>';
+                    custs.forEach(c => {
+                        posCustomerSelect.innerHTML += `<option value="${c.id}">${c.customer_id} - ${c.name} (${c.mobile})</option>`;
+                    });
+                });
+        }
+
+        function renderProductGrid(products) {
+            document.getElementById("productResultCount").textContent = `${products.length} items`;
+            if (products.length === 0) {
+                productGrid.innerHTML = `
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="fa-solid fa-box-open fa-3x mb-2 text-black-50"></i>
+                        <p>No products match search criteria.</p>
+                    </div>`;
+                return;
+            }
+
+            productGrid.innerHTML = products.map(p => {
+                const stock = parseFloat(p.current_stock);
+                const isOut = stock <= 0;
+                return `
+                    <div class="col-6 col-md-4">
+                        <div class="card product-card p-2 h-100 ${isOut ? 'out-of-stock' : ''}" onclick="addToCart(${p.id})">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="badge bg-light text-success border"><code>${p.product_id}</code></span>
+                                <span class="badge ${isOut ? 'bg-danger' : 'bg-success'}">${isOut ? 'OUT OF STOCK' : stock + ' ' + p.unit}</span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1 fs-7 text-truncate">${p.name}</h6>
+                            ${p.gujarati_name ? `<div class="text-muted fs-8 text-truncate">${p.gujarati_name}</div>` : ''}
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top">
+                                <span class="fw-bold text-success fs-6">₹${p.selling_price}</span>
+                                <button class="btn btn-sm btn-green px-2 py-0" ${isOut ? 'disabled' : ''}><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        window.addToCart = function(productId) {
+            const product = catalog.find(p => p.id === productId);
+            if (!product) return;
+
+            const stock = parseFloat(product.current_stock);
+            if (stock <= 0) {
+                alert(`Cannot add '${product.name}' because it is OUT OF STOCK.`);
+                return;
+            }
+
+            const existing = cart.find(item => item.product_id === productId);
+            if (existing) {
+                if (existing.quantity + 1 > stock) {
+                    alert(`Insufficient stock! Only ${stock} ${product.unit} available for '${product.name}'.`);
+                    return;
+                }
+                existing.quantity += 1;
+            } else {
+                cart.push({
+                    product_id: product.id,
+                    name: product.name,
+                    unit: product.unit,
+                    selling_price: parseFloat(product.selling_price),
+                    gst_rate: parseFloat(product.gst_rate || 0),
+                    stock: stock,
+                    quantity: 1,
+                    discount: 0
+                });
+            }
+            renderCart();
+        };
+
+        function renderCart() {
+            if (cart.length === 0) {
+                cartTableBody.innerHTML = '';
+                cartTableBody.appendChild(emptyCartRow);
+                cartItemCount.textContent = "0 Items";
+                summarySubtotal.textContent = "₹0.00";
+                summaryGST.textContent = "₹0.00";
+                summaryGrandTotal.textContent = "₹0.00";
+                return;
+            }
+
+            cartTableBody.innerHTML = cart.map((item, index) => {
+                const rawTotal = (item.selling_price * item.quantity) - item.discount;
+                const gstAmount = rawTotal * (item.gst_rate / 100);
+                const lineTotal = rawTotal + gstAmount;
+
+                return `
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark fs-7">${item.name}</div>
+                            <small class="text-muted">GST: ${item.gst_rate}%</small>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm" style="width: 100px;">
+                                <button class="btn btn-outline-secondary" onclick="updateQty(${index}, -1)">-</button>
+                                <input type="number" class="form-control text-center px-1 fw-bold" value="${item.quantity}" min="1" max="${item.stock}" onchange="setQty(${index}, this.value)">
+                                <button class="btn btn-outline-secondary" onclick="updateQty(${index}, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>₹${item.selling_price.toFixed(2)}</td>
+                        <td class="text-end pe-3 fw-bold text-success">₹${lineTotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm text-danger" onclick="removeFromCart(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            const totals = calculateTotals();
+            cartItemCount.textContent = `${cart.length} Items (${totals.totalQty} Units)`;
+            summarySubtotal.textContent = `₹${totals.subtotal.toFixed(2)}`;
+            summaryGST.textContent = `₹${totals.gstTotal.toFixed(2)}`;
+            summaryGrandTotal.textContent = `₹${totals.grandTotal.toFixed(2)}`;
+        }
+
+        window.updateQty = function(index, delta) {
+            const item = cart[index];
+            const newQty = item.quantity + delta;
+            if (newQty <= 0) {
+                removeFromCart(index);
+                return;
+            }
+            if (newQty > item.stock) {
+                alert(`Cannot exceed available stock (${item.stock} ${item.unit}).`);
+                return;
+            }
+            item.quantity = newQty;
+            renderCart();
+        };
+
+        window.setQty = function(index, val) {
+            const item = cart[index];
+            const qty = parseFloat(val) || 1;
+            if (qty <= 0) {
+                removeFromCart(index);
+                return;
+            }
+            if (qty > item.stock) {
+                alert(`Cannot exceed available stock (${item.stock} ${item.unit}).`);
+                item.quantity = item.stock;
+            } else {
+                item.quantity = qty;
+            }
+            renderCart();
+        };
+
+        window.removeFromCart = function(index) {
+            cart.splice(index, 1);
+            renderCart();
+        };
+
+        function calculateTotals() {
+            let subtotal = 0;
+            let gstTotal = 0;
+            let totalQty = 0;
+
+            cart.forEach(item => {
+                const raw = (item.selling_price * item.quantity) - item.discount;
+                const gst = raw * (item.gst_rate / 100);
+                subtotal += raw;
+                gstTotal += gst;
+                totalQty += item.quantity;
+            });
+
+            const overallDiscount = parseFloat(billDiscountInput.value) || 0;
+            let grandTotal = subtotal + gstTotal - overallDiscount;
+            if (grandTotal < 0) grandTotal = 0;
+
+            return { subtotal, gstTotal, grandTotal, totalQty, overallDiscount };
+        }
+
+        // Quick Add Customer Handler
+        document.getElementById("posQuickCustomerForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const name = document.getElementById("quickCustName").value.trim();
+            const mobile = document.getElementById("quickCustMobile").value.trim();
+            const city = document.getElementById("quickCustCity").value.trim();
+
+            const formData = new FormData();
+            formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+            formData.append("name", name);
+            formData.append("mobile", mobile);
+            formData.append("city", city);
+
+            fetch("{% url 'customers:add' %}", {
+                method: "POST",
+                body: formData,
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            }).then(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById("addCustomerModal"));
+                modal.hide();
+                fetchCustomers();
+            });
+        });
+
+        // CHECKOUT SUBMISSION
+        btnCheckout.addEventListener("click", function() {
+            if (cart.length === 0) {
+                alert("Cart is empty! Add products before checkout.");
+                return;
+            }
+
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            const totals = calculateTotals();
+
+            const payload = {
+                customer_id: posCustomerSelect.value || null,
+                items: cart.map(item => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    discount: item.discount
+                })),
+                overall_discount: totals.overallDiscount,
+                payment_method: paymentMethod,
+                cash_amount: parseFloat(document.getElementById("mix_cash").value) || 0,
+                upi_amount: parseFloat(document.getElementById("mix_upi").value) || 0,
+                card_amount: parseFloat(document.getElementById("mix_card").value) || 0,
+                bank_transfer_amount: parseFloat(document.getElementById("mix_bank").value) || 0,
+                credit_amount: parseFloat(document.getElementById("mix_credit").value) || 0,
+            };
+
+            // Disable button to prevent double-click submit
+            btnCheckout.disabled = true;
+            btnCheckout.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> PROCESSING...';
+
+            fetch("{% url 'sales:checkout' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnCheckout.disabled = false;
+                btnCheckout.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i> COMPLETE CHECKOUT / બિલ પૂરૂં કરો';
+
+                if (data.success) {
+                    // Open Receipt Print Window / Redirect
+                    window.location.href = data.receipt_url;
+                } else {
+                    alert("Checkout Failed: " + data.message);
+                }
+            })
+            .catch(err => {
+                btnCheckout.disabled = false;
+                btnCheckout.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i> COMPLETE CHECKOUT / બિલ પૂરૂં કરો';
+                alert("Network or Server error during checkout: " + err);
+            });
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+    });
+</script>
+{% endblock %}

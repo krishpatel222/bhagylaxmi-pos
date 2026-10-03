@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block auth_content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card card-custom shadow-lg overflow-hidden border-0">
+            <!-- Header Banner -->
+            <div class="bg-success text-white text-center p-4" style="background-color: var(--primary-green) !important;">
+                <i class="fa-solid fa-store fa-3x mb-2 text-warning"></i>
+                <h3 class="fw-bold mb-1">ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ</h3>
+                <p class="mb-0 text-white-50 fs-7">Bhagyalaxmi Enterprise POS Management</p>
+                <div class="mt-2 text-warning fs-8">
+                    <i class="fa-solid fa-location-dot me-1"></i> વિસનગર, ગુજરાત
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <h5 class="card-title text-center text-secondary mb-4">Staff Login / સ્ટાફ લોગિન</h5>
+
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label font-weight-bold">
+                            <i class="fa-solid fa-user me-1 text-success"></i> Username / યુઝરનેમ
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label font-weight-bold">
+                            <i class="fa-solid fa-key me-1 text-success"></i> Password / પાસવર્ડ
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.remember_me }}
+                        <label class="form-check-label text-muted" for="id_remember_me">
+                            Remember session on this device
+                        </label>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-green btn-lg fw-bold shadow-sm">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Log In / લોગિન કરો
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light text-center py-3 text-muted fs-8">
+                &copy; Bhagyalaxmi Enterprise &bull; Secure POS Billing
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

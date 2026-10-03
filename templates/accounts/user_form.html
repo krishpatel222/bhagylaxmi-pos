@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-user-gear me-2"></i> {{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.username %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Username</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Name</label>
+                        {{ form.first_name }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Role Access / ભૂમિકા</label>
+                        {{ form.role }}
+                        <div class="form-text">
+                            <strong>ADMIN:</strong> Full control including reports, prices, stock edits.<br>
+                            <strong>CASHIER:</strong> POS billing access only. Cannot view purchase prices or profit.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mobile Number</label>
+                        {{ form.phone }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email (Optional)</label>
+                        {{ form.email }}
+                    </div>
+
+                    {% if form.password %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Password</label>
+                        {{ form.password }}
+                    </div>
+                    {% endif %}
+
+                    {% if form.new_password %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">New Password (Optional)</label>
+                        {{ form.new_password }}
+                    </div>
+                    {% endif %}
+
+                    {% if form.is_active %}
+                    <div class="mb-4 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label fw-bold" for="id_is_active">
+                            Account Active Status
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between pt-2">
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-green px-4 fw-bold">
+                            <i class="fa-solid fa-check me-1"></i> Save Staff Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

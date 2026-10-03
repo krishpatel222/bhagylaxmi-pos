@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales & Invoice History - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-file-invoice text-success me-2"></i> Sales & Invoice History</h3>
+        <p class="text-muted mb-0">{% if is_admin %}All completed POS sales receipts & tax invoices{% else %}My completed sales receipts & tax invoices{% endif %}</p>
+    </div>
+    <div>
+        <a href="{% url 'sales:pos' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-cash-register me-1"></i> Open POS Billing
+        </a>
+    </div>
+</div>
+
+<!-- Multi-criteria Search & Filter Card -->
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Search Query</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Invoice #, Name, Mobile...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Payment Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="PAID" {% if status_filter == 'PAID' %}selected{% endif %}>Paid</option>
+                    <option value="PARTIAL" {% if status_filter == 'PARTIAL' %}selected{% endif %}>Partial</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Payment Method</label>
+                <select name="method" class="form-select form-select-sm">
+                    <option value="">All Methods</option>
+                    <option value="CASH" {% if method_filter == 'CASH' %}selected{% endif %}>Cash</option>
+                    <option value="UPI" {% if method_filter == 'UPI' %}selected{% endif %}>UPI</option>
+                    <option value="CARD" {% if method_filter == 'CARD' %}selected{% endif %}>Card</option>
+                    <option value="BANK_TRANSFER" {% if method_filter == 'BANK_TRANSFER' %}selected{% endif %}>Bank</option>
+                    <option value="CREDIT" {% if method_filter == 'CREDIT' %}selected{% endif %}>Credit</option>
+                    <option value="MIXED" {% if method_filter == 'MIXED' %}selected{% endif %}>Mixed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">From Date</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">To Date</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+            </div>
+            {% if is_admin %}
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Billed By Cashier</label>
+                <select name="cashier" class="form-select form-select-sm">
+                    <option value="">All Cashiers & Admins</option>
+                    {% for c in cashiers_list %}
+                        <option value="{{ c.id }}" {% if cashier_filter == c.id|stringformat:"i" %}selected{% endif %}>{{ c.get_full_name|default:c.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-2 d-flex align-items-end gap-1">
+                <button type="submit" class="btn btn-green btn-sm w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                {% if query or status_filter or method_filter or date_from or date_to or cashier_filter %}
+                    <a href="{% url 'sales:list' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sales Table -->
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Invoice #</th>
+                        <th>Date & Time</th>
+                        <th>Customer</th>
+                        <th>Grand Total</th>
+                        <th>Paid</th>
+                        <th>Pending</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Billed By</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-success"><code>{{ s.sale_id }}</code></td>
+                        <td class="small">{{ s.sale_date|date:"d/m/Y h:i A" }}</td>
+                        <td>
+                            {% if s.customer %}
+                                <div class="fw-bold text-dark">{{ s.customer.name }}</div>
+                                <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i>{{ s.customer.mobile }}</div>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">Walk-in Customer</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark">₹{{ s.grand_total }}</td>
+                        <td class="text-success fw-bold">₹{{ s.paid_amount }}</td>
+                        <td class="{% if s.pending_amount > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">₹{{ s.pending_amount }}</td>
+                        <td><span class="badge bg-secondary">{{ s.get_payment_method_display }}</span></td>
+                        <td>
+                            {% if s.payment_status == 'PAID' %}
+                                <span class="badge bg-success">PAID</span>
+                            {% elif s.payment_status == 'PARTIAL' %}
+                                <span class="badge bg-warning text-dark">PARTIAL</span>
+                            {% else %}
+                                <span class="badge bg-danger">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ s.created_by.get_full_name|default:s.created_by.username }}</td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'sales:detail' s.pk %}" class="btn btn-sm btn-outline-info" title="View Detail">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <a href="{% url 'sales:invoice' s.pk %}" class="btn btn-sm btn-outline-primary" target="_blank" title="A4 Invoice">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                </a>
+                                <a href="{% url 'sales:receipt' s.pk %}" class="btn btn-sm btn-outline-success" target="_blank" title="80mm Receipt">
+                                    <i class="fa-solid fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-receipt fa-3x mb-3 text-black-50 d-block"></i>
+                            <h5>No sales receipts found</h5>
+                            <p class="mb-3">Start creating sales via POS billing terminal.</p>
+                            <a href="{% url 'sales:pos' %}" class="btn btn-green fw-bold">
+                                <i class="fa-solid fa-bolt me-1"></i> Open POS Billing
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} sales</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&method={{ method_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&cashier={{ cashier_filter }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&method={{ method_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&cashier={{ cashier_filter }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

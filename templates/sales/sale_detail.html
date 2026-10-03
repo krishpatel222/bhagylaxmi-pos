@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Sale Detail: {{ sale.sale_id }} - {{ shop_name }}{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <a href="{% url 'sales:list' %}" class="btn btn-outline-secondary me-2">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Sales History
+        </a>
+        <a href="{% url 'sales:invoice' sale.pk %}" target="_blank" class="btn btn-primary fw-bold">
+            <i class="fa-solid fa-file-invoice me-1"></i> View A4 Invoice
+        </a>
+        <a href="{% url 'sales:receipt' sale.pk %}" target="_blank" class="btn btn-green fw-bold">
+            <i class="fa-solid fa-print me-1"></i> Print 80mm Receipt
+        </a>
+    </div>
+    <span class="badge bg-success fs-6 px-3 py-2">Bill ID: {{ sale.sale_id }}</span>
+</div>
+
+<div class="alert alert-info border-info d-flex align-items-center mb-4">
+    <i class="fa-solid fa-lock fa-lg me-3 text-info"></i>
+    <div>
+        <strong>Immutable Financial Record:</strong> This completed sale cannot be edited or deleted. Corrections must be handled via formal sales returns (Step 11).
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Bill Summary Card -->
+    <div class="col-md-4">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-success"><i class="fa-solid fa-file-invoice me-2"></i> Bill Overview</h5>
+            <div class="small">
+                <div class="mb-2"><strong>Bill Number:</strong> <code>{{ sale.sale_id }}</code></div>
+                <div class="mb-2"><strong>Date & Time:</strong> {{ sale.sale_date|date:"d/m/Y h:i A" }}</div>
+                <div class="mb-2"><strong>Billed By:</strong> {{ sale.created_by.get_full_name|default:sale.created_by.username }}</div>
+                <div class="mb-2">
+                    <strong>Customer:</strong><br>
+                    {% if sale.customer %}
+                        <span class="fw-bold text-dark">{{ sale.customer.name }}</span> ({{ sale.customer.mobile }})
+                    {% else %}
+                        <span class="badge bg-light text-dark border">Walk-in Customer</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2"><strong>Payment Method:</strong> <span class="badge bg-dark">{{ sale.get_payment_method_display }}</span></div>
+                <div class="mb-2">
+                    <strong>Payment Status:</strong>
+                    {% if sale.payment_status == 'PAID' %}
+                        <span class="badge bg-success">PAID</span>
+                    {% elif sale.payment_status == 'PARTIAL' %}
+                        <span class="badge bg-warning text-dark">PARTIAL</span>
+                    {% else %}
+                        <span class="badge bg-danger">PENDING</span>
+                    {% endif %}
+                </div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Subtotal:</span>
+                <strong>₹{{ sale.subtotal }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>GST Tax:</span>
+                <strong>₹{{ sale.gst_amount }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Discount:</span>
+                <strong class="text-success">-₹{{ sale.discount }}</strong>
+            </div>
+            <div class="d-flex justify-content-between fs-5 fw-bold border-top pt-2 text-success">
+                <span>Grand Total:</span>
+                <span>₹{{ sale.grand_total }}</span>
+            </div>
+            <div class="d-flex justify-content-between small text-muted mt-2">
+                <span>Paid: ₹{{ sale.paid_amount }}</span>
+                <span class="{% if sale.pending_amount > 0 %}text-danger fw-bold{% endif %}">Pending: ₹{{ sale.pending_amount }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Breakdown -->
+    <div class="col-md-8">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-dark"><i class="fa-solid fa-list me-2"></i> Billed Products List</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Product Name</th>
+                            <th>Selling Price</th>
+                            <th>Qty</th>
+                            <th>GST %</th>
+                            <th>Discount</th>
+                            <th class="text-end">Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ item.product.name }}</div>
+                                {% if item.product.gujarati_name %}<div class="text-muted small">{{ item.product.gujarati_name }}</div>{% endif %}
+                            </td>
+                            <td>₹{{ item.selling_price }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ item.quantity }} {{ item.product.unit }}</span></td>
+                            <td>{{ item.gst_rate }}%</td>
+                            <td>₹{{ item.discount }}</td>
+                            <td class="text-end fw-bold text-success">₹{{ item.line_total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

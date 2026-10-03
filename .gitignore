@@ -1,0 +1,31 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Static files & Media in production
+staticfiles/
+
+# Backup files
+backups/
+
+# Logs & OS metadata
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Local database
+
+db.sqlite3

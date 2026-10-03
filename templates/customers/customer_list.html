@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Directory - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-users text-success me-2"></i> Customer Directory / ગ્રાહક લિસ્ટ</h3>
+        <p class="text-muted mb-0">Manage customer contacts, addresses, and profiles</p>
+    </div>
+    <div>
+        <a href="{% url 'customers:add' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-user-plus me-1"></i> Add Customer / નવો ગ્રાહક
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search Customer ID, Name, Mobile, WhatsApp, Email, GSTIN...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="city" class="form-select">
+                    <option value="">All Cities</option>
+                    {% for c in cities %}
+                        <option value="{{ c }}" {% if city_filter == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-green w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                {% if query or status_filter or city_filter %}
+                    <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Customer Table -->
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Customer ID</th>
+                        <th>Customer Name</th>
+                        <th>Mobile / Contact</th>
+                        <th>City / Location</th>
+                        <th>GST Number</th>
+                        {% if not is_cashier %}
+                            <th>Opening Balance</th>
+                        {% endif %}
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-success"><code>{{ c.customer_id }}</code></td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ c.name }}</div>
+                            {% if c.email %}<div class="text-muted small"><i class="fa-solid fa-envelope me-1"></i>{{ c.email }}</div>{% endif %}
+                        </td>
+                        <td>
+                            <div><i class="fa-solid fa-phone me-1 text-primary"></i> {{ c.mobile }}</div>
+                            {% if c.whatsapp %}
+                                <div class="text-success fs-8"><i class="fa-brands fa-whatsapp me-1"></i> {{ c.whatsapp }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ c.city|default:"-" }} {% if c.state %}<span class="text-muted small">({{ c.state }})</span>{% endif %}</td>
+                        <td>
+                            {% if c.gst_number %}
+                                <span class="badge bg-light text-dark border"><code>{{ c.gst_number }}</code></span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        {% if not is_cashier %}
+                            <td class="fw-bold text-dark">₹{{ c.opening_balance }}</td>
+                        {% endif %}
+                        <td>
+                            {% if c.is_active %}
+                                <span class="badge bg-success px-2 py-1">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary px-2 py-1">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'customers:detail' c.pk %}" class="btn btn-sm btn-outline-info" title="View Detail">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <a href="{% url 'customers:edit' c.pk %}" class="btn btn-sm btn-outline-primary" title="Edit Profile">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+
+                                {% if not is_cashier %}
+                                    <form method="post" action="{% url 'customers:toggle_status' c.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm {% if c.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if c.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="fa-solid {% if c.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="{% url 'customers:delete' c.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete customer {{ c.name }}?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if is_cashier %}7{% else %}8{% endif %}" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-users fa-3x mb-3 d-block text-black-50"></i>
+                            <h5>No customers found</h5>
+                            <p class="mb-3">Register customers for POS billing and receipt records.</p>
+                            <a href="{% url 'customers:add' %}" class="btn btn-green fw-bold">
+                                <i class="fa-solid fa-user-plus me-1"></i> Add First Customer
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} customers</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&city={{ city_filter }}&status={{ status_filter }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&city={{ city_filter }}&status={{ status_filter }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

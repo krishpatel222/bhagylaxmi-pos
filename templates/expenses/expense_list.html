@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-receipt text-danger me-2"></i>Expense Management</h2>
+        <p class="text-muted mb-0">Track and manage business operational expenses</p>
+    </div>
+    <a href="{% url 'expenses:create' %}" class="btn btn-pink">
+        <i class="fa-solid fa-plus me-1"></i> Add Expense
+    </a>
+</div>
+
+<!-- Filters Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" name="q" class="form-control" placeholder="Search ID or description..." value="{{ q }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">-- All Categories --</option>
+                    {% for cat_code, cat_name in categories %}
+                        <option value="{{ cat_code }}" {% if category == cat_code %}selected{% endif %}>{{ cat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}" placeholder="From Date">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}" placeholder="To Date">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-green flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                <a href="{% url 'expenses:list' %}" class="btn btn-light"><i class="fa-solid fa-rotate me-1"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Total Summary Banner -->
+<div class="alert alert-info border-0 shadow-sm mb-4 d-flex justify-content-between align-items-center">
+    <span class="fw-semibold"><i class="fa-solid fa-calculator me-2"></i>Total Expenses (Filtered):</span>
+    <span class="fs-4 fw-bold text-danger">₹{{ total_amount|floatformat:2 }}</span>
+</div>
+
+<!-- Expense Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Expense ID</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Payment Method</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                        <tr>
+                            <td class="fw-bold"><a href="{% url 'expenses:detail' expense.expense_id %}" class="text-decoration-none text-dark">{{ expense.expense_id }}</a></td>
+                            <td>{{ expense.expense_date|date:"d M Y" }}</td>
+                            <td><span class="badge bg-secondary">{{ expense.get_category_display }}</span></td>
+                            <td>{{ expense.description|truncatechars:40 }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ expense.get_payment_method_display }}</span></td>
+                            <td class="fw-bold text-danger">₹{{ expense.amount }}</td>
+                            <td>
+                                <a href="{% url 'expenses:detail' expense.expense_id %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-eye"></i> View</a>
+                                <a href="{% url 'expenses:edit' expense.expense_id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No expense records found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-0 py-3">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&category={{ category }}&date_from={{ date_from }}&date_to={{ date_to }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&category={{ category }}&date_from={{ date_from }}&date_to={{ date_to }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

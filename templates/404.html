@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}404 Page Not Found - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="card card-custom p-5 shadow">
+            <i class="fa-solid fa-compass-slash fa-4x text-warning mb-3"></i>
+            <h1 class="display-5 fw-bold text-secondary">404</h1>
+            <h3 class="fw-bold mb-3">Page Not Found / પેજ મળ્યું નથી</h3>
+            <p class="text-muted mb-4">The requested page or order could not be located in the system.</p>
+            <a href="{% if user.profile.is_cashier %}{% url 'pos_billing' %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-green px-4 fw-bold">
+                <i class="fa-solid fa-house me-2"></i> Go to Homepage
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

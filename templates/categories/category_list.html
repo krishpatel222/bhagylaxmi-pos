@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Category Management - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-layer-group text-success me-2"></i> Category Management / કેટેગરી લિસ્ટ</h3>
+        <p class="text-muted mb-0">Organize shop products into Gujarati & English categories</p>
+    </div>
+    <div>
+        <a href="{% url 'brand_list' %}" class="btn btn-outline-secondary me-2 shadow-sm">
+            <i class="fa-solid fa-copyright me-1"></i> Manage Brands
+        </a>
+        <a href="{% url 'category_add' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> Add Category / નવી કેટેગરી
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search category by English name, Gujarati name, or slug...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-green w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                {% if query or status_filter %}
+                    <a href="{% url 'category_list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Category Name</th>
+                        <th>ગુજરાતી નામ (Gujarati)</th>
+                        <th>Slug</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td class="ps-4 fw-bold">
+                            <i class="fa-solid fa-folder text-warning me-2"></i> {{ cat.name }}
+                        </td>
+                        <td class="fw-bold text-success">{{ cat.gujarati_name|default:"-" }}</td>
+                        <td><code>{{ cat.slug }}</code></td>
+                        <td>
+                            {% if cat.is_active %}
+                                <span class="badge bg-success-subtle text-success border border-success px-2 py-1">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ cat.created_at|date:"M d, Y" }}</td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'category_edit' cat.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+
+                                <form method="post" action="{% url 'category_toggle' cat.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if cat.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if cat.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fa-solid {% if cat.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    </button>
+                                </form>
+
+                                <form method="post" action="{% url 'category_delete' cat.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete category {{ cat.name }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-layer-group fa-2x mb-2 d-block text-black-50"></i>
+                            No categories found matching your search.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

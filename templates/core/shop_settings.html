@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Shop Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0"><i class="fa-solid fa-sliders text-success me-2"></i>Business & Shop Settings</h4>
+                <p class="text-muted small mb-0">Configure shop details, branding, GST, and invoice prefixes</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <h5 class="fw-bold text-success mb-3">Shop Branding & Address</h5>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Shop Name (Gujarati / English)</label>
+                        {{ form.shop_name }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Address</label>
+                        {{ form.address }}
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">City</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">State</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">PIN Code</label>
+                            {{ form.pincode }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-success mb-3">Contact Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Mobile</label>
+                            {{ form.mobile }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">WhatsApp</label>
+                            {{ form.whatsapp }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Email</label>
+                            {{ form.email }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-success mb-3">Taxation & Invoice Prefix</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">GST Number</label>
+                            {{ form.gst_number }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Default GST Rate (%)</label>
+                            {{ form.default_gst_rate }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Invoice Prefix</label>
+                            {{ form.invoice_prefix }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Order Prefix</label>
+                            {{ form.order_prefix }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Currency Symbol</label>
+                            {{ form.currency }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Shop Logo</label>
+                        {{ form.logo }}
+                        {% if settings.logo %}
+                            <div class="mt-2">
+                                <img src="{{ settings.logo.url }}" alt="Shop Logo" style="max-height: 60px;">
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-green px-4"><i class="fa-solid fa-floppy-disk me-1"></i> Save Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

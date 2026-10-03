@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Stock Status - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked text-success me-2"></i> Inventory Stock Status</h3>
+        <p class="text-muted mb-0">Current available stock levels across product catalog</p>
+    </div>
+    <div>
+        <a href="{% url 'stock_adjust' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-sliders me-1"></i> Stock Adjustment
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search Product ID, Name, Gujarati, SKU, Barcode...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                        <option value="{{ c.id }}" {% if category_id == c.id|stringformat:"i" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Stock Status</option>
+                    <option value="in_stock" {% if status_filter == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-green w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                {% if query or category_id or status_filter %}
+                    <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Product ID</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Minimum Stock</th>
+                        <th>Stock Status</th>
+                        <th>Last Updated</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-success"><code>{{ p.product_id }}</code></td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ p.name }}</div>
+                            {% if p.gujarati_name %}
+                                <div class="text-success small fw-semibold">{{ p.gujarati_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.category.name }}</td>
+                        <td class="fw-bold fs-6">
+                            {% if p.current_stock <= 0 %}
+                                <span class="text-danger">0 {{ p.unit }}</span>
+                            {% elif p.is_low_stock %}
+                                <span class="text-warning">{{ p.current_stock }} {{ p.unit }}</span>
+                            {% else %}
+                                <span class="text-success">{{ p.current_stock }} {{ p.unit }}</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="text-muted">{{ p.minimum_stock }} {{ p.unit }}</span></td>
+                        <td>
+                            {% if p.current_stock <= 0 %}
+                                <span class="badge bg-danger px-2 py-1"><i class="fa-solid fa-circle-xmark me-1"></i>OUT OF STOCK</span>
+                            {% elif p.is_low_stock %}
+                                <span class="badge bg-warning text-dark px-2 py-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>LOW STOCK</span>
+                            {% else %}
+                                <span class="badge bg-success px-2 py-1"><i class="fa-solid fa-circle-check me-1"></i>IN STOCK</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ p.updated_at|date:"d M Y, h:i A" }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'stock_adjust' %}?product={{ p.id }}" class="btn btn-sm btn-outline-primary fw-bold" title="Adjust Stock">
+                                <i class="fa-solid fa-sliders me-1"></i> Adjust
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No stock items found matching your filter.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

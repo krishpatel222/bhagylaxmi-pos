@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Cashier Terminal Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-cash-register text-primary me-2"></i>Cashier Terminal Dashboard</h2>
+        <p class="text-muted mb-0">{{ shop_name }} - {{ shop_address }}</p>
+    </div>
+    <a href="{% url 'sales:pos' %}" class="btn btn-green btn-lg px-4 shadow-sm">
+        <i class="fa-solid fa-cash-register me-2"></i> Open POS Billing
+    </a>
+</div>
+
+<!-- Safe Operational Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="opacity-75 small text-uppercase fw-semibold d-block">Today's Bills</span>
+                        <h2 class="fw-bold mb-0 display-6">{{ today_bills }}</h2>
+                    </div>
+                    <i class="fa-solid fa-receipt fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-warning text-dark h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="opacity-75 small text-uppercase fw-semibold d-block">Low Stock Warnings</span>
+                        <h2 class="fw-bold mb-0 display-6">{{ low_stock_count }}</h2>
+                    </div>
+                    <i class="fa-solid fa-triangle-exclamation fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-white h-100" style="background-color: var(--secondary-pink);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="opacity-75 small text-uppercase fw-semibold d-block">Pending Online Orders</span>
+                        <h2 class="fw-bold mb-0 display-6">{{ pending_online_orders }}</h2>
+                    </div>
+                    <i class="fa-solid fa-truck-fast fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Shortcuts -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'sales:pos' %}" class="btn btn-outline-primary w-100 py-3 fw-bold shadow-sm">
+            <i class="fa-solid fa-plus-circle me-2"></i> New POS Bill
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'customers:list' %}" class="btn btn-outline-success w-100 py-3 fw-bold shadow-sm">
+            <i class="fa-solid fa-users me-2"></i> Manage Customers
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'online_orders:dispatch' %}" class="btn btn-outline-secondary w-100 py-3 fw-bold shadow-sm">
+            <i class="fa-solid fa-boxes-packing me-2"></i> Dispatch Queue
+        </a>
+    </div>
+</div>
+
+<!-- Recent Sales -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-history text-muted me-2"></i>My Recent Transactions</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bill ID</th>
+                        <th>Time</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in recent_sales %}
+                        <tr>
+                            <td class="fw-bold">{{ sale.sale_id }}</td>
+                            <td>{{ sale.sale_date|date:"H:i" }}</td>
+                            <td>{{ sale.customer.name|default:"Walk-in Customer" }}</td>
+                            <td class="fw-bold text-success">₹{{ sale.grand_total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No sales completed today.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

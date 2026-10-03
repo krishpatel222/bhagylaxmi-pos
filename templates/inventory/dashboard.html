@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-warehouse text-success me-2"></i> Stock & Inventory Dashboard</h3>
+        <p class="text-muted mb-0">Real-time stock monitoring, low-stock warnings, and transaction logs</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary fw-bold">
+            <i class="fa-solid fa-boxes-stacked me-1"></i> Stock List
+        </a>
+        <a href="{% url 'history_list' %}" class="btn btn-outline-info fw-bold">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Movement History
+        </a>
+        <a href="{% url 'stock_adjust' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-sliders me-1"></i> Stock Adjustment / સ્ટોક એડજસ્ટ
+        </a>
+    </div>
+</div>
+
+<!-- 4 Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card card-custom p-3 border-start border-4 border-success">
+            <div class="text-muted small font-weight-bold text-uppercase">Total Active Products</div>
+            <div class="fs-2 fw-bold text-success mt-1">{{ total_products }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-box me-1"></i> Catalog items</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card card-custom p-3 border-start border-4 border-primary">
+            <div class="text-muted small font-weight-bold text-uppercase">Total Inventory Stock</div>
+            <div class="fs-2 fw-bold text-primary mt-1">{{ total_stock_qty }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-cubes me-1"></i> Aggregate units</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card card-custom p-3 border-start border-4 border-warning">
+            <div class="text-muted small font-weight-bold text-uppercase">Low Stock Alert</div>
+            <div class="fs-2 fw-bold text-warning mt-1">{{ low_stock_count }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-bell me-1"></i> Needs reorder</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card card-custom p-3 border-start border-4 border-danger">
+            <div class="text-muted small font-weight-bold text-uppercase">Out of Stock</div>
+            <div class="fs-2 fw-bold text-danger mt-1">{{ out_of_stock_count }}</div>
+            <div class="text-muted fs-8 mt-1"><i class="fa-solid fa-circle-xmark me-1"></i> Zero stock</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables: Recent Transactions & Low Stock Warning -->
+<div class="row g-4">
+    <!-- Recent Stock Transactions -->
+    <div class="col-md-8">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-success"><i class="fa-solid fa-list-check me-2"></i> Recent Stock Movements</h5>
+                <a href="{% url 'history_list' %}" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Date/Time</th>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th>Qty</th>
+                                <th>Prev → New</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                            <tr>
+                                <td class="ps-3 small text-muted">{{ tx.created_at|date:"d M H:i" }}</td>
+                                <td class="fw-bold">{{ tx.product.name }}</td>
+                                <td>
+                                    {% if tx.transaction_type == 'PURCHASE_IN' or tx.transaction_type == 'ADJUSTMENT_IN' or tx.transaction_type == 'SALES_RETURN' or tx.transaction_type == 'OPENING_STOCK' %}
+                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1"><i class="fa-solid fa-arrow-down me-1"></i>{{ tx.get_transaction_type_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1"><i class="fa-solid fa-arrow-up me-1"></i>{{ tx.get_transaction_type_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ tx.quantity }} {{ tx.product.unit }}</td>
+                                <td class="small">{{ tx.previous_stock }} &rarr; <strong class="text-primary">{{ tx.new_stock }}</strong></td>
+                                <td class="small text-muted">{{ tx.created_by.username|default:"System" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No stock transactions logged yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Out of Stock Warning Box -->
+    <div class="col-md-4">
+        <div class="card card-custom mb-4 border-start border-4 border-danger">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-circle-exclamation me-2"></i> Out of Stock Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for p in out_of_stock_products %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <div class="fw-bold text-dark">{{ p.name }}</div>
+                            <div class="text-muted small">{{ p.product_id }} &bull; {{ p.category.name }}</div>
+                        </div>
+                        <span class="badge bg-danger">0 {{ p.unit }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center text-muted py-3">No out of stock items!</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

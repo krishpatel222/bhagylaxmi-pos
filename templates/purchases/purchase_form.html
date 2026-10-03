@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="card card-custom mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-truck-ramp-box me-2"></i> {{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="purchaseForm">
+                    {% csrf_token %}
+
+                    <!-- SECTION 1: HEADER DATA -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-building-user me-2"></i> Supplier & Invoice Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Supplier / સપ્લાયર <span class="text-danger">*</span></label>
+                                {{ form.supplier }}
+                                {% if form.supplier.errors %}<div class="text-danger small mt-1">{{ form.supplier.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Supplier Invoice Number <span class="text-danger">*</span></label>
+                                {{ form.invoice_number }}
+                                {% if form.invoice_number.errors %}<div class="text-danger small mt-1">{{ form.invoice_number.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Purchase Date</label>
+                                {{ form.purchase_date }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: DYNAMIC PRODUCTS TABLE -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-boxes-stacked me-2"></i> Purchase Items (Stock In)</h6>
+                            <button type="button" class="btn btn-sm btn-success fw-bold" id="addRowBtn">
+                                <i class="fa-solid fa-plus me-1"></i> Add Product Row
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered bg-white align-middle" id="itemsTable">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th style="width: 35%;">Product <span class="text-danger">*</span></th>
+                                        <th style="width: 12%;">Qty <span class="text-danger">*</span></th>
+                                        <th style="width: 15%;">Unit Cost (₹) <span class="text-danger">*</span></th>
+                                        <th style="width: 12%;">GST (%)</th>
+                                        <th style="width: 12%;">Discount (₹)</th>
+                                        <th style="width: 14%;">Line Total (₹)</th>
+                                        <th style="width: 5%;" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="item-row">
+                                        <td>
+                                            <select name="product_id[]" class="form-select product-select" required>
+                                                <option value="">Select Product...</option>
+                                                {% for p in products %}
+                                                    <option value="{{ p.id }}" data-price="{{ p.purchase_price }}" data-gst="{{ p.gst_rate }}" data-unit="{{ p.unit }}">{{ p.product_id }} - {{ p.name }} (Stock: {{ p.current_stock }} {{ p.unit }})</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td><input type="number" name="quantity[]" class="form-control qty-input" step="0.01" min="0.01" value="1.00" required></td>
+                                        <td><input type="number" name="purchase_price[]" class="form-control price-input" step="0.01" min="0" value="0.00" required></td>
+                                        <td><input type="number" name="gst_rate[]" class="form-control gst-input" step="0.01" min="0" max="100" value="0.00"></td>
+                                        <td><input type="number" name="discount[]" class="form-control disc-input" step="0.01" min="0" value="0.00"></td>
+                                        <td><input type="text" class="form-control line-total-input fw-bold bg-light" readonly value="0.00"></td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-row-btn"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: PAYMENT & SUMMARY -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <div class="p-3 bg-light rounded-3 h-100">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-note-sticky me-2"></i> Notes</h6>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-5">
+                            <div class="p-3 bg-light rounded-3">
+                                <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-calculator me-2"></i> Payment Summary</h6>
+                                
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal:</span>
+                                    <span class="fw-bold" id="previewSubtotal">₹0.00</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Item Discounts:</span>
+                                    <span class="fw-bold text-danger" id="previewDiscount">- ₹0.00</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">GST Tax:</span>
+                                    <span class="fw-bold text-info" id="previewGst">+ ₹0.00</span>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex justify-content-between mb-3 fs-5">
+                                    <span class="fw-bold">Grand Total:</span>
+                                    <span class="fw-bold text-success" id="previewGrandTotal">₹0.00</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-success">Paid Amount (₹)</label>
+                                    {{ form.paid_amount }}
+                                    {% if form.paid_amount.errors %}<div class="text-danger small mt-1">{{ form.paid_amount.errors.0 }}</div>{% endif %}
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold text-muted">Pending Amount:</span>
+                                    <span class="fw-bold text-danger" id="previewPending">₹0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-2 border-top">
+                        <a href="{% url 'purchases:list' %}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-green px-5 fw-bold btn-lg shadow-sm">
+                            <i class="fa-solid fa-check me-1"></i> Save Purchase Invoice & Post Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const tableBody = document.querySelector("#itemsTable tbody");
+    const addRowBtn = document.getElementById("addRowBtn");
+
+    function updateCalculations() {
+        let subtotal = 0;
+        let totalGst = 0;
+        let totalDisc = 0;
+
+        document.querySelectorAll(".item-row").forEach(row => {
+            const qty = parseFloat(row.querySelector(".qty-input").value) || 0;
+            const price = parseFloat(row.querySelector(".price-input").value) || 0;
+            const gstRate = parseFloat(row.querySelector(".gst-input").value) || 0;
+            const disc = parseFloat(row.querySelector(".disc-input").value) || 0;
+
+            const lineSub = qty * price;
+            const lineSubAfterDisc = Math.max(0, lineSub - disc);
+            const lineGst = (lineSubAfterDisc * gstRate) / 100;
+            const lineTotal = lineSubAfterDisc + lineGst;
+
+            row.querySelector(".line-total-input").value = lineTotal.toFixed(2);
+
+            subtotal += lineSub;
+            totalDisc += disc;
+            totalGst += lineGst;
+        });
+
+        const grandTotal = Math.max(0, (subtotal - totalDisc) + totalGst);
+        const paidInput = document.getElementById("id_paid_amount");
+        const paid = parseFloat(paidInput ? paidInput.value : 0) || 0;
+        const pending = Math.max(0, grandTotal - paid);
+
+        document.getElementById("previewSubtotal").textContent = "₹" + subtotal.toFixed(2);
+        document.getElementById("previewDiscount").textContent = "- ₹" + totalDisc.toFixed(2);
+        document.getElementById("previewGst").textContent = "+ ₹" + totalGst.toFixed(2);
+        document.getElementById("previewGrandTotal").textContent = "₹" + grandTotal.toFixed(2);
+        document.getElementById("previewPending").textContent = "₹" + pending.toFixed(2);
+    }
+
+    tableBody.addEventListener("change", function(e) {
+        if (e.target.classList.contains("product-select")) {
+            const option = e.target.options[e.target.selectedIndex];
+            const row = e.target.closest("tr");
+            if (option.dataset.price) row.querySelector(".price-input").value = option.dataset.price;
+            if (option.dataset.gst) row.querySelector(".gst-input").value = option.dataset.gst;
+        }
+        updateCalculations();
+    });
+
+    tableBody.addEventListener("input", updateCalculations);
+    const paidElem = document.getElementById("id_paid_amount");
+    if (paidElem) paidElem.addEventListener("input", updateCalculations);
+
+    addRowBtn.addEventListener("click", function() {
+        const firstRow = tableBody.querySelector(".item-row");
+        const newRow = firstRow.cloneNode(true);
+        newRow.querySelectorAll("input").forEach(i => {
+            if (i.classList.contains("qty-input")) i.value = "1.00";
+            else if (i.classList.contains("price-input") || i.classList.contains("gst-input") || i.classList.contains("disc-input") || i.classList.contains("line-total-input")) i.value = "0.00";
+        });
+        newRow.querySelector(".product-select").selectedIndex = 0;
+        tableBody.appendChild(newRow);
+    });
+
+    tableBody.addEventListener("click", function(e) {
+        if (e.target.closest(".remove-row-btn")) {
+            if (tableBody.querySelectorAll(".item-row").length > 1) {
+                e.target.closest(".item-row").remove();
+                updateCalculations();
+            } else {
+                alert("At least one product item is required.");
+            }
+        }
+    });
+
+    updateCalculations();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-receipt text-success me-2"></i>Sales Report</h2>
+        <p class="text-muted mb-0">Executive revenue and billing breakdown</p>
+    </div>
+    <a href="?date_from={{ date_from }}&date_to={{ date_to }}&export=csv" class="btn btn-outline-success">
+        <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+    </a>
+</div>
+
+<!-- Date Filter Form -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">From Date</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">To Date</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-green flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Filter Report</button>
+                <a href="{% url 'reports:sales' %}" class="btn btn-light"><i class="fa-solid fa-rotate me-1"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Key Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body py-3">
+                <span class="text-muted small d-block">Total Bills</span>
+                <span class="fs-4 fw-bold text-dark">{{ total_bills }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body py-3">
+                <span class="opacity-75 small d-block">Total Revenue</span>
+                <span class="fs-4 fw-bold">₹{{ total_sales|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body py-3">
+                <span class="text-muted small d-block">Total GST</span>
+                <span class="fs-5 fw-bold text-dark">₹{{ total_gst|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body py-3">
+                <span class="text-muted small d-block">Total Discount</span>
+                <span class="fs-5 fw-bold text-danger">₹{{ total_discount|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning text-dark">
+            <div class="card-body py-3">
+                <span class="opacity-75 small d-block">Pending Collection</span>
+                <span class="fs-4 fw-bold">₹{{ total_pending|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sale ID</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Subtotal</th>
+                        <th>GST</th>
+                        <th>Grand Total</th>
+                        <th>Paid</th>
+                        <th>Pending</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                        <tr>
+                            <td class="fw-bold">{{ s.sale_id }}</td>
+                            <td>{{ s.sale_date|date:"d M Y H:i" }}</td>
+                            <td>{{ s.customer.name|default:"Walk-in Customer" }}</td>
+                            <td>₹{{ s.subtotal }}</td>
+                            <td>₹{{ s.gst_amount }}</td>
+                            <td class="fw-bold text-success">₹{{ s.grand_total }}</td>
+                            <td>₹{{ s.paid_amount }}</td>
+                            <td class="text-danger">₹{{ s.pending_amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No sales records found for selected criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

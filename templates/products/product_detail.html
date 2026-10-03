@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Product Detail: {{ product.name }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary me-2">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Product Catalog
+    </a>
+    <a href="{% url 'product_edit' product.pk %}" class="btn btn-green me-2">
+        <i class="fa-solid fa-pen me-1"></i> Edit Product
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card card-custom p-4 text-center">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded border mb-3 mx-auto" style="max-height: 250px; object-fit: contain;">
+            {% else %}
+                <div class="py-5 bg-light rounded border mb-3 text-muted">
+                    <i class="fa-solid fa-box-open fa-4x mb-2 d-block"></i>
+                    No Image Uploaded
+                </div>
+            {% endif %}
+
+            <h4 class="fw-bold mb-1">{{ product.name }}</h4>
+            {% if product.gujarati_name %}
+                <h5 class="text-success fw-bold mb-3">{{ product.gujarati_name }}</h5>
+            {% endif %}
+
+            <span class="badge bg-success-subtle text-success border border-success fs-6 px-3 py-2">
+                {{ product.product_id }}
+            </span>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-success">Product Specifications</h5>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">Category</span>
+                    <strong class="fs-6">{{ product.category.name }}</strong>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">Brand</span>
+                    <strong class="fs-6">{{ product.brand.name|default:"Unbranded" }}</strong>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">Unit</span>
+                    <strong class="fs-6">{{ product.get_unit_display }}</strong>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">SKU Code</span>
+                    <code>{{ product.sku|default:"-" }}</code>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">Barcode</span>
+                    <code>{{ product.barcode|default:"-" }}</code>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted d-block small">Status</span>
+                    {% if product.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                </div>
+            </div>
+
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-danger">Pricing Breakdown (Admin Confidential)</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <span class="text-muted d-block small text-danger">Purchase Price</span>
+                    <strong class="fs-5 text-danger">₹{{ product.purchase_price }}</strong>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="text-muted d-block small text-success">Selling Price</span>
+                    <strong class="fs-5 text-success">₹{{ product.selling_price }}</strong>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="text-muted d-block small">MRP</span>
+                    <strong class="fs-5 text-dark">₹{{ product.mrp }}</strong>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="text-muted d-block small">GST Rate</span>
+                    <strong class="fs-5 text-info">{{ product.gst_rate }}%</strong>
+                </div>
+            </div>
+
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">Stock Details</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-4">
+                    <span class="text-muted d-block small">Opening Stock</span>
+                    <strong class="fs-6">{{ product.opening_stock }} {{ product.unit }}</strong>
+                </div>
+                <div class="col-4">
+                    <span class="text-muted d-block small">Current Stock</span>
+                    <strong class="fs-5 {% if product.is_low_stock %}text-danger{% else %}text-success{% endif %}">
+                        {{ product.current_stock }} {{ product.unit }}
+                    </strong>
+                </div>
+                <div class="col-4">
+                    <span class="text-muted d-block small">Minimum Threshold</span>
+                    <strong class="fs-6 text-warning">{{ product.minimum_stock }} {{ product.unit }}</strong>
+                </div>
+            </div>
+
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-secondary"><i class="fa-solid fa-clock-rotate-left me-2"></i> Recent Stock Movements</h5>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Qty</th>
+                            <th>Stock (Prev &rarr; New)</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td class="small text-muted">{{ tx.created_at|date:"d M H:i" }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ tx.get_transaction_type_display }}</span></td>
+                            <td class="fw-bold">{{ tx.quantity }}</td>
+                            <td class="small">{{ tx.previous_stock }} &rarr; <strong>{{ tx.new_stock }}</strong></td>
+                            <td class="small text-muted">{{ tx.note|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-muted text-center py-2">No stock movement transactions logged for this product.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

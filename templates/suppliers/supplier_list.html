@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Supplier Directory - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-building-user text-success me-2"></i> Supplier Directory / સપ્લાયર લિસ્ટ</h3>
+        <p class="text-muted mb-0">Manage vendor contact info, GST numbers, and ledger opening balances</p>
+    </div>
+    <div>
+        <a href="{% url 'suppliers:add' %}" class="btn btn-green shadow-sm fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> Add Supplier / નવો સપ્લાયર
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search Supplier ID, Name, Company, Mobile, or GSTIN...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="city" class="form-select">
+                    <option value="">All Cities</option>
+                    {% for c in cities %}
+                        <option value="{{ c }}" {% if city_filter == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-green w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                {% if query or status_filter or city_filter %}
+                    <a href="{% url 'suppliers:list' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Supplier Table -->
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Supplier ID</th>
+                        <th>Supplier / Company</th>
+                        <th>Contact</th>
+                        <th>City / Location</th>
+                        <th>GST Number</th>
+                        <th>Opening Balance</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in suppliers %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-success"><code>{{ s.supplier_id }}</code></td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ s.name }}</div>
+                            {% if s.company_name %}
+                                <div class="text-muted small"><i class="fa-solid fa-building me-1"></i>{{ s.company_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div><i class="fa-solid fa-phone me-1 text-primary"></i> {{ s.mobile }}</div>
+                            {% if s.whatsapp %}
+                                <div class="text-success fs-8"><i class="fa-brands fa-whatsapp me-1"></i> {{ s.whatsapp }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.city|default:"-" }} {% if s.state %}<span class="text-muted small">({{ s.state }})</span>{% endif %}</td>
+                        <td>
+                            {% if s.gst_number %}
+                                <span class="badge bg-light text-dark border"><code>{{ s.gst_number }}</code></span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark">₹{{ s.opening_balance }}</td>
+                        <td>
+                            {% if s.is_active %}
+                                <span class="badge bg-success px-2 py-1">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary px-2 py-1">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'suppliers:detail' s.pk %}" class="btn btn-sm btn-outline-info" title="View Detail">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <a href="{% url 'suppliers:edit' s.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+
+                                <form method="post" action="{% url 'suppliers:toggle_status' s.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if s.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if s.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fa-solid {% if s.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                    </button>
+                                </form>
+
+                                <form method="post" action="{% url 'suppliers:delete' s.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete supplier {{ s.name }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-building-user fa-3x mb-3 d-block text-black-50"></i>
+                            <h5>No suppliers found</h5>
+                            <p class="mb-3">Click below to add your first supplier record.</p>
+                            <a href="{% url 'suppliers:add' %}" class="btn btn-green fw-bold">
+                                <i class="fa-solid fa-plus me-1"></i> Add First Supplier
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} suppliers</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&city={{ city_filter }}&status={{ status_filter }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&city={{ city_filter }}&status={{ status_filter }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

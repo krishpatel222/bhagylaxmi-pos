@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice {{ sale.sale_id }} - {{ shop_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .invoice-box {
+            max-width: 850px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border-top: 6px solid #16823b;
+        }
+        .shop-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #16823b;
+        }
+        .invoice-table th {
+            background-color: #f1f5f9 !important;
+            color: #334155;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        .action-toolbar {
+            max-width: 850px;
+            margin: 20px auto 0 auto;
+        }
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm;
+            }
+            body {
+                background: #ffffff !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .invoice-box {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                border-top: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-toolbar no-print d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'sales:detail' sale.pk %}" class="btn btn-outline-secondary btn-sm fw-bold">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Sale Detail
+    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'sales:receipt' sale.pk %}" class="btn btn-outline-success btn-sm fw-bold" target="_blank">
+            <i class="fa-solid fa-receipt me-1"></i> 80mm Thermal Receipt
+        </a>
+        <button onclick="window.print()" class="btn btn-success btn-sm fw-bold">
+            <i class="fa-solid fa-print me-1"></i> Print A4 Invoice
+        </button>
+    </div>
+</div>
+
+<div class="invoice-box">
+    <!-- Header -->
+    <div class="row pb-3 mb-4 border-bottom align-items-center">
+        <div class="col-7">
+            <div class="shop-brand">{{ shop_name }}</div>
+            <div class="text-muted small"><i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ shop_address }}</div>
+            <div class="text-muted small"><i class="fa-solid fa-phone me-1 text-primary"></i> Contact: {{ shop_phone }}</div>
+        </div>
+        <div class="col-5 text-end">
+            <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6 fw-bold mb-2">TAX INVOICE</span>
+            <div class="fw-bold fs-5 text-dark">Invoice #: <code>{{ sale.sale_id }}</code></div>
+            <div class="text-muted small">Date: {{ sale.sale_date|date:"d/m/Y h:i A" }}</div>
+        </div>
+    </div>
+
+    <!-- Bill To & Bill Details Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <div class="p-3 bg-light rounded-3 h-100">
+                <h6 class="fw-bold text-success mb-2"><i class="fa-solid fa-user me-2"></i> Billed To / ગ્રાહક વિગત:</h6>
+                {% if sale.customer %}
+                    <div class="fw-bold text-dark fs-6">{{ sale.customer.name }}</div>
+                    <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i> Mobile: {{ sale.customer.mobile }}</div>
+                    {% if sale.customer.address %}<div class="text-muted small"><i class="fa-solid fa-map-pin me-1"></i> {{ sale.customer.address }}</div>{% endif %}
+                    {% if sale.customer.city %}<div class="text-muted small"><i class="fa-solid fa-city me-1"></i> {{ sale.customer.city }}{% if sale.customer.state %}, {{ sale.customer.state }}{% endif %}{% if sale.customer.pincode %} - {{ sale.customer.pincode }}{% endif %}</div>{% endif %}
+                    {% if sale.customer.gst_number %}<div class="text-muted small"><i class="fa-solid fa-file-invoice me-1"></i> GSTIN: <code>{{ sale.customer.gst_number }}</code></div>{% endif %}
+                {% else %}
+                    <div class="fw-bold text-dark">Walk-in Customer / સામાન્ય ગ્રાહક</div>
+                    <div class="text-muted small">Retail Counter Sale</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-6">
+            <div class="p-3 bg-light rounded-3 h-100">
+                <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-circle-info me-2"></i> Payment Summary:</h6>
+                <div class="small">
+                    <div class="mb-1"><strong>Payment Method:</strong> <span class="badge bg-secondary">{{ sale.get_payment_method_display }}</span></div>
+                    <div class="mb-1">
+                        <strong>Payment Status:</strong>
+                        {% if sale.payment_status == 'PAID' %}
+                            <span class="badge bg-success">PAID</span>
+                        {% elif sale.payment_status == 'PARTIAL' %}
+                            <span class="badge bg-warning text-dark">PARTIAL</span>
+                        {% else %}
+                            <span class="badge bg-danger">PENDING</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-1"><strong>Billed By:</strong> {{ sale.created_by.get_full_name|default:sale.created_by.username }}</div>
+                    <div class="mb-1"><strong>Paid Amount:</strong> ₹{{ sale.paid_amount }}</div>
+                    {% if sale.pending_amount > 0 %}
+                        <div class="text-danger fw-bold"><strong>Pending Amount:</strong> ₹{{ sale.pending_amount }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle invoice-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 5%;" class="text-center">#</th>
+                    <th style="width: 40%;">Product Description</th>
+                    <th style="width: 12%;" class="text-center">Qty / Unit</th>
+                    <th style="width: 13%;" class="text-end">Rate (₹)</th>
+                    <th style="width: 10%;" class="text-center">GST %</th>
+                    <th style="width: 20%;" class="text-end">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ item.product.name }}</div>
+                        {% if item.product.gujarati_name %}<div class="text-muted small">{{ item.product.gujarati_name }}</div>{% endif %}
+                    </td>
+                    <td class="text-center fw-bold">{{ item.quantity }} {{ item.product.unit }}</td>
+                    <td class="text-end">₹{{ item.selling_price }}</td>
+                    <td class="text-center">{{ item.gst_rate }}%</td>
+                    <td class="text-end fw-bold text-dark">₹{{ item.line_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Totals Summary & Terms -->
+    <div class="row pt-2 align-items-end">
+        <div class="col-7">
+            <div class="p-3 bg-light rounded-3 small">
+                <strong>Terms & Conditions / શરતો:</strong>
+                <ul class="mb-0 ps-3 mt-1 text-muted">
+                    <li>Goods once sold will not be returned without valid invoice.</li>
+                    <li>Subject to Visnagar Jurisdiction.</li>
+                    <li>Computer generated tax invoice. No signature required.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-5">
+            <table class="table table-sm table-borderless mb-0">
+                <tr>
+                    <td class="text-muted">Subtotal:</td>
+                    <td class="text-end fw-bold">₹{{ sale.subtotal }}</td>
+                </tr>
+                {% if sale.gst_amount > 0 %}
+                <tr>
+                    <td class="text-muted">GST Tax:</td>
+                    <td class="text-end fw-bold">₹{{ sale.gst_amount }}</td>
+                </tr>
+                {% endif %}
+                {% if sale.discount > 0 %}
+                <tr>
+                    <td class="text-muted">Bill Discount:</td>
+                    <td class="text-end fw-bold text-success">-₹{{ sale.discount }}</td>
+                </tr>
+                {% endif %}
+                <tr class="border-top border-2">
+                    <td class="fs-5 fw-bold text-success">Grand Total:</td>
+                    <td class="text-end fs-5 fw-bold text-success">₹{{ sale.grand_total }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Signatory Footer -->
+    <div class="row mt-5 pt-4 border-top align-items-center">
+        <div class="col-6 text-muted small">
+            <strong>ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ - વિસનગર</strong><br>
+            Thank you for your business!
+        </div>
+        <div class="col-6 text-end">
+            <div class="small fw-bold text-dark mb-4">For Bhagyalaxmi Enterprise</div>
+            <div class="text-muted small border-top d-inline-block pt-1 px-4">Authorized Signatory</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

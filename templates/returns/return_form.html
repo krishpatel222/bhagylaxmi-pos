@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Process Sales Return{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0"><i class="fa-solid fa-rotate-left text-warning me-2"></i>Process Sales Return</h4>
+            </div>
+            <div class="card-body p-4">
+                <!-- Sale Lookup Form -->
+                <form method="get" class="row g-3 mb-4">
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold">Enter Sale Invoice ID (e.g. SAL-000001)</label>
+                        <input type="text" name="sale_id" class="form-control" placeholder="SAL-000001" value="{{ sale_id }}" required>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-green w-100"><i class="fa-solid fa-magnifying-glass me-1"></i> Find Sale</button>
+                    </div>
+                </form>
+
+                {% if sale %}
+                <hr>
+                <div class="alert alert-light border mb-4">
+                    <div class="row">
+                        <div class="col-md-4"><strong>Sale ID:</strong> {{ sale.sale_id }}</div>
+                        <div class="col-md-4"><strong>Date:</strong> {{ sale.sale_date|date:"d M Y H:i" }}</div>
+                        <div class="col-md-4"><strong>Customer:</strong> {{ sale.customer.name|default:"Walk-in Customer" }}</div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="sale_id" value="{{ sale.sale_id }}">
+
+                    <h5 class="fw-bold mb-3">Select Items & Quantities to Return</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Selling Price</th>
+                                    <th>Sold Qty</th>
+                                    <th>Already Returned</th>
+                                    <th>Max Returnable</th>
+                                    <th width="150">Return Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for info in sale_items_data %}
+                                <tr>
+                                    <td class="fw-semibold">{{ info.item.product.name }}</td>
+                                    <td>₹{{ info.item.selling_price }}</td>
+                                    <td>{{ info.item.quantity }}</td>
+                                    <td class="text-muted">{{ info.already_returned }}</td>
+                                    <td class="fw-bold text-success">{{ info.max_returnable }}</td>
+                                    <td>
+                                        {% if info.max_returnable > 0 %}
+                                            <input type="number" step="0.01" min="0" max="{{ info.max_returnable }}" name="qty_{{ info.item.id }}" class="form-control" value="0">
+                                        {% else %}
+                                            <span class="badge bg-secondary">Fully Returned</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Return Reason <span class="text-danger">*</span></label>
+                        <input type="text" name="reason" class="form-control" placeholder="e.g. Defective item, customer changed mind" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Internal Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional internal notes"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'returns:list' %}" class="btn btn-light"><i class="fa-solid fa-arrow-left me-1"></i> Cancel</a>
+                        <button type="submit" class="btn btn-green px-4"><i class="fa-solid fa-check me-1"></i> Submit Return & Restore Stock</button>
+                    </div>
+                </form>
+                {% elif sale_id %}
+                    <div class="alert alert-danger mb-0">Sale invoice '{{ sale_id }}' not found. Please verify the Sale ID.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

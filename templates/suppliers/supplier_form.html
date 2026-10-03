@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-building-user me-2"></i> {{ title }}</h4>
+                {% if supplier %}
+                    <span class="badge bg-success fs-6">ID: {{ supplier.supplier_id }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- SECTION 1: BASIC INFORMATION -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-user me-2"></i> Basic Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Supplier Name <span class="text-danger">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Company / Business Name</label>
+                                {{ form.company_name }}
+                                {% if form.company_name.errors %}<div class="text-danger small mt-1">{{ form.company_name.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: CONTACT DETAILS -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-address-book me-2"></i> Contact Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Mobile Number <span class="text-danger">*</span></label>
+                                {{ form.mobile }}
+                                {% if form.mobile.errors %}<div class="text-danger small mt-1">{{ form.mobile.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">WhatsApp Number</label>
+                                {{ form.whatsapp }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Email Address</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: ADDRESS -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-map-location-dot me-2"></i> Address Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Full Address</label>
+                                {{ form.address }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">City</label>
+                                {{ form.city }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">State</label>
+                                {{ form.state }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">PIN Code</label>
+                                {{ form.pincode }}
+                                {% if form.pincode.errors %}<div class="text-danger small mt-1">{{ form.pincode.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: BUSINESS & BALANCE -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Business & Financial Data</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">GSTIN Number (15 Digits)</label>
+                                {{ form.gst_number }}
+                                {% if form.gst_number.errors %}<div class="text-danger small mt-1">{{ form.gst_number.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-danger">Opening Ledger Balance (₹)</label>
+                                {{ form.opening_balance }}
+                                {% if form.opening_balance.errors %}<div class="text-danger small mt-1">{{ form.opening_balance.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Notes</label>
+                                {{ form.notes }}
+                            </div>
+
+                            <div class="col-12 form-check ms-2">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-bold" for="id_is_active">
+                                    Active Supplier Status
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-2">
+                        <a href="{% url 'suppliers:list' %}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-green px-5 fw-bold btn-lg shadow-sm">
+                            <i class="fa-solid fa-check me-1"></i> Save Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

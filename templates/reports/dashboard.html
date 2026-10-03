@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Hub{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold mb-1"><i class="fa-solid fa-chart-column text-info me-2"></i>Business Analytics & Reports</h2>
+    <p class="text-muted mb-0">Executive financial overview and operational reports (Admin Only)</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-receipt text-success fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Sales Report</h5>
+                        <small class="text-muted">Total sales, discounts, GST & balances</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:sales' %}" class="btn btn-sm btn-outline-success w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Sales Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-chart-line text-primary fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Profit & Margin</h5>
+                        <small class="text-muted">Gross profit calculation & cost analysis</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:profit' %}" class="btn btn-sm btn-outline-primary w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Profit Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-truck-ramp-box text-danger fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Purchase Report</h5>
+                        <small class="text-muted">Stock-in history & supplier payables</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:purchases' %}" class="btn btn-sm btn-outline-danger w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Purchase Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-boxes-stacked text-warning fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Inventory Valuation</h5>
+                        <small class="text-muted">Stock count, valuation & low stock alerts</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:inventory' %}" class="btn btn-sm btn-outline-warning w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Inventory Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-secondary bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-file-invoice-dollar text-secondary fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Expense Report</h5>
+                        <small class="text-muted">Operational expenses breakdown</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:expenses' %}" class="btn btn-sm btn-outline-secondary w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Expense Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                        <i class="fa-solid fa-rotate-left text-info fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Returns Report</h5>
+                        <small class="text-muted">Customer returns & refund totals</small>
+                    </div>
+                </div>
+                <a href="{% url 'reports:returns' %}" class="btn btn-sm btn-outline-info w-100"><i class="fa-solid fa-arrow-right me-1"></i> View Returns Report</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

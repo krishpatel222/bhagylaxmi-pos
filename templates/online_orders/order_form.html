@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ભાગ્યલક્ષ્મી એન્ટરપ્રાઇઝ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-truck-ramp-box me-2"></i> {{ title }}</h4>
+                {% if order %}
+                    <span class="badge bg-success fs-6">Order #: {{ order.order_id }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" id="onlineOrderForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="items_json" id="itemsJsonInput" value="[]">
+
+                    <!-- SECTION 1: RECIPIENT / CUSTOMER SHIPPING DETAILS -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-user me-2"></i> Shipping Address & Customer Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Select Existing Customer (Optional)</label>
+                                {{ form.customer }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Customer Full Name <span class="text-danger">*</span></label>
+                                {{ form.customer_name }}
+                                {% if form.customer_name.errors %}<div class="text-danger small mt-1">{{ form.customer_name.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Mobile Number <span class="text-danger">*</span></label>
+                                {{ form.mobile }}
+                                {% if form.mobile.errors %}<div class="text-danger small mt-1">{{ form.mobile.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">WhatsApp Number</label>
+                                {{ form.whatsapp }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Email Address</label>
+                                {{ form.email }}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Full Delivery Address <span class="text-danger">*</span></label>
+                                {{ form.full_address }}
+                                {% if form.full_address.errors %}<div class="text-danger small mt-1">{{ form.full_address.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">City <span class="text-danger">*</span></label>
+                                {{ form.city }}
+                                {% if form.city.errors %}<div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">State <span class="text-danger">*</span></label>
+                                {{ form.state }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">PIN Code <span class="text-danger">*</span></label>
+                                {{ form.pincode }}
+                                {% if form.pincode.errors %}<div class="text-danger small mt-1">{{ form.pincode.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not order %}
+                    <!-- SECTION 2: ORDER ITEMS BUILDER (NEW ORDER) -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-boxes-stacked me-2"></i> Add Products to Order</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <select id="productSelect" class="form-select">
+                                    <option value="">-- Select Product --</option>
+                                    {% for p in products %}
+                                        <option value="{{ p.id }}" data-price="{{ p.selling_price }}" data-name="{{ p.name }}" data-unit="{{ p.unit }}">
+                                            {{ p.name }} (₹{{ p.selling_price }} / {{ p.unit }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" id="productQty" class="form-control" placeholder="Qty" min="1" value="1" step="1">
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" id="btnAddItem" class="btn btn-primary w-100 fw-bold"><i class="fa-solid fa-plus me-1"></i> Add Product</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive bg-white rounded border">
+                            <table class="table table-hover align-middle mb-0" id="orderItemsTable">
+                                <thead class="table-light">
+                                    <tr class="small">
+                                        <th class="ps-3">Product Name</th>
+                                        <th style="width: 120px;">Qty</th>
+                                        <th style="width: 120px;">Rate (₹)</th>
+                                        <th style="width: 140px;" class="text-end pe-3">Line Total (₹)</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderItemsBody">
+                                    <tr id="emptyItemsRow">
+                                        <td colspan="5" class="text-center py-4 text-muted">No products added yet. Select a product above.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- SECTION 3: FINANCIAL & LOGISTICS INFO -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-coins me-2"></i> Payment & Courier Dispatch Data</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Total Order Amount (₹) <span class="text-danger">*</span></label>
+                                {{ form.order_amount }}
+                                {% if form.order_amount.errors %}<div class="text-danger small mt-1">{{ form.order_amount.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Payment Received (₹)</label>
+                                {{ form.payment_received }}
+                                {% if form.payment_received.errors %}<div class="text-danger small mt-1">{{ form.payment_received.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Payment Status</label>
+                                {{ form.payment_status }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Courier Name</label>
+                                {{ form.courier_name }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tracking AWB Number</label>
+                                {{ form.tracking_number }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Order Status</label>
+                                {{ form.status }}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Internal Notes (STRICTLY PRIVATE - Never printed on shipping label)</label>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-2">
+                        <a href="{% url 'online_orders:list' %}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" id="btnSubmitForm" class="btn btn-green px-5 fw-bold btn-lg shadow-sm">
+                            <i class="fa-solid fa-check me-1"></i> Save Order Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const productSelect = document.getElementById("productSelect");
+        const productQty = document.getElementById("productQty");
+        const btnAddItem = document.getElementById("btnAddItem");
+        const orderItemsBody = document.getElementById("orderItemsBody");
+        const emptyItemsRow = document.getElementById("emptyItemsRow");
+        const orderAmountInput = document.getElementById("id_order_amount");
+        const itemsJsonInput = document.getElementById("itemsJsonInput");
+        const btnSubmitForm = document.getElementById("btnSubmitForm");
+        const form = document.getElementById("onlineOrderForm");
+
+        let orderItems = [];
+
+        if (btnAddItem) {
+            btnAddItem.addEventListener("click", function() {
+                const selectedOpt = productSelect.options[productSelect.selectedIndex];
+                if (!selectedOpt || !selectedOpt.value) {
+                    alert("Please select a product first.");
+                    return;
+                }
+
+                const productId = parseInt(selectedOpt.value);
+                const name = selectedOpt.getAttribute("data-name");
+                const price = parseFloat(selectedOpt.getAttribute("data-price")) || 0;
+                const qty = parseFloat(productQty.value) || 1;
+
+                const existing = orderItems.find(i => i.product_id === productId);
+                if (existing) {
+                    existing.quantity += qty;
+                } else {
+                    orderItems.push({
+                        product_id: productId,
+                        name: name,
+                        selling_price: price,
+                        quantity: qty
+                    });
+                }
+
+                renderItems();
+            });
+        }
+
+        function renderItems() {
+            if (orderItems.length === 0) {
+                orderItemsBody.innerHTML = '';
+                orderItemsBody.appendChild(emptyItemsRow);
+                orderAmountInput.value = "0.00";
+                itemsJsonInput.value = "[]";
+                return;
+            }
+
+            let total = 0;
+            orderItemsBody.innerHTML = orderItems.map((item, index) => {
+                const lineTotal = item.selling_price * item.quantity;
+                total += lineTotal;
+                return `
+                    <tr>
+                        <td class="ps-3 fw-bold text-dark">${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>₹${item.selling_price.toFixed(2)}</td>
+                        <td class="text-end pe-3 fw-bold text-success">₹${lineTotal.toFixed(2)}</td>
+                        <td><button type="button" class="btn btn-sm text-danger" onclick="removeItem(${index})"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            }).join('');
+
+            orderAmountInput.value = total.toFixed(2);
+            itemsJsonInput.value = JSON.stringify(orderItems);
+        }
+
+        window.removeItem = function(index) {
+            orderItems.splice(index, 1);
+            renderItems();
+        };
+
+        // Form Submit Double-click protection
+        form.addEventListener("submit", function() {
+            if (btnSubmitForm) {
+                btnSubmitForm.disabled = true;
+                btnSubmitForm.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving Order...';
+            }
+        });
+    });
+</script>
+{% endblock %}
